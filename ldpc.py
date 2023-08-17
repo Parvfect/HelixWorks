@@ -3,6 +3,7 @@ from networkx.algorithms import bipartite
 import networkx as nx
 import matplotlib.pyplot as plt
 import numpy as np
+from bec import generate_input_arr, generate_erasures
 
 
 def generate_tanner_graph(parity_check_matrix):
@@ -32,8 +33,54 @@ def generate_tanner_graph(parity_check_matrix):
     plt.show()
     return G
 
+def decode_matrix(pcm, max_iterations):
+    """ 
+    Uses SPA for the Binary Erasure Channel to decode the output 
+    Returns False if Decoding unsuccesful (may be smarter to just return the sub optimal decoded)
+    """
+
+    copy_matrix = pcm.clone()
+    flag = False
+
+    while iterations < max_iterations: # There should be an and condition for theoretics 
+
+        # Row Decoding
+        for i in pcm:
+            if i.count_nans() == 1: # Should be generalised based on larger cases
+                erased_bit_location = find_erased_bit(i)
+                pcm[i][j] = get_sum(i) % 2
+        
+        # Column Decoding
+        for j in pcm:
+            if i.count_nans() == 1: # Should be generalised based on larger cases
+                erased_bit_location = find_erased_bit(i)
+                pcm[i][j] = get_sum(i) % 2
+        
+        if copy_matrix.nans() == 0:
+            return copy_matrix
+        
+    return False
+
 def create_parity_check_matrix(i,j):
     """ Using BEC create redundnacy code using erasure probability to generate partiy check matrix"""
     pass
 
 
+
+H = [
+    [1,1,1,0,0,0,0,0,0,0,0,0],
+    [0,0,0,1,1,1,0,0,0,0,0,0],
+    [0,0,0,0,0,0,0,0,0,1,1,1],
+    [1,0,0,0,1,0,0,0,0,1,0,0],
+    [0,1,0,0,0,1,0,0,0,0,1,0],
+    [0,0,1,0,0,0,1,0,0,0,0,1]
+] 
+
+t = generate_input_arr(4)
+t = generate_erasures(t, 0.4)
+
+H = [
+    [t[0], t[1], t[0] + t[1]],
+    [t[2], t[3], t[2] + t[3]],
+    [t[]]
+    ]
