@@ -67,20 +67,47 @@ def create_parity_check_matrix(i,j):
 
 
 
-H = [
-    [1,1,1,0,0,0,0,0,0,0,0,0],
-    [0,0,0,1,1,1,0,0,0,0,0,0],
-    [0,0,0,0,0,0,0,0,0,1,1,1],
-    [1,0,0,0,1,0,0,0,0,1,0,0],
-    [0,1,0,0,0,1,0,0,0,0,1,0],
-    [0,0,1,0,0,0,1,0,0,0,0,1]
-] 
+H = np.matrix([
+    [1, 1, 0, 0, 1, 0],
+    [1, 0, 0, 1, 0, 1],
+    [0, 1, 1, 0, 0, 1]
+]) 
 
-t = generate_input_arr(4)
-t = generate_erasures(t, 0.4)
+# Input array is a zero vector
+input_arr = np.zeros(6)
+print(np.dot(input_arr, H.T) % 2)
 
-H = [
-    [t[0], t[1], t[0] + t[1]],
-    [t[2], t[3], t[2] + t[3]],
-    [t[]]
-    ]
+def dumb_decoder(output_arr, H, max_iterations=100):
+    """ Implementation of a SPA specific to the Binary Erasure Channel """
+
+    iterations = 0
+    H = H.T
+
+    # Iterate through the rows of the parity check matrix
+    for i in range(H.shape[0]): # -1 because of the transpose
+        
+        # Intiialise counter and sum
+        counter = 0
+        sum_row = 0
+
+        for j in range(H.shape[1]):
+
+            # Sum the bits in the row
+            sum_row = sum_row + output_arr[j]*H[i][j]
+            
+            # Count the number of erasures in the row
+            if not output_arr[j]:
+                counter += 1
+        
+        if counter == 1:
+            # Find the position of erasure and replace it with the sum modulo 2 of the rest
+            output_arr[np.argwhere(np.isnan(output_arr))] = sum_row % 2
+        
+        iterations += 1
+        
+        if np.isnan(output_arr).sum() == 0 or iterations == max_iterations:
+            return output_arr
+
+    return False
+
+print(dumb_decoder(np.array([np.nan, 0, 0, 0, 0, 0]), H))
