@@ -75,29 +75,28 @@ H = np.matrix([
 
 # Input array is a zero vector
 input_arr = np.zeros(6)
-print(np.dot(input_arr, H.T) % 2)
 
 def dumb_decoder(output_arr, H, max_iterations=100):
     """ Implementation of a SPA specific to the Binary Erasure Channel """
 
     iterations = 0
-    H = H.T
+    H = np.matrix(H).T
+    output_arr = np.matrix(output_arr)
 
     # Iterate through the rows of the parity check matrix
-    for i in range(H.shape[0]): # -1 because of the transpose
+    for i in range(H.shape[1]): # -1 because of the transpose
         
         # Intiialise counter and sum
         counter = 0
         sum_row = 0
 
-        for j in range(H.shape[1]):
-
-            # Sum the bits in the row
-            sum_row = sum_row + output_arr[j]*H[i][j]
+        for j in range(H.shape[0]):
             
-            # Count the number of erasures in the row
-            if not output_arr[j]:
-                counter += 1
+            if not output_arr.item(0,j):
+                if H.item(j,i) == 1:
+                    counter += 1
+            else:
+                sum_row = sum_row + output_arr.item(0,j)*H.item(j,i)
         
         if counter == 1:
             # Find the position of erasure and replace it with the sum modulo 2 of the rest
@@ -105,9 +104,10 @@ def dumb_decoder(output_arr, H, max_iterations=100):
         
         iterations += 1
         
-        if np.isnan(output_arr).sum() == 0 or iterations == max_iterations:
+        # If there are no erasures left or max iterations reached return the output array
+        if not np.isnan(output_arr.A1).any() or iterations == max_iterations:
             return output_arr
 
     return False
 
-print(dumb_decoder(np.array([np.nan, 0, 0, 0, 0, 0]), H))
+print(dumb_decoder(np.matrix([0, 0, 0, 0, 0, np.nan]), H))
