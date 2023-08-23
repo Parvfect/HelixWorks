@@ -5,6 +5,15 @@ from ldpc import parity_matrix_permuter, dumb_decoder
 import numpy as np
 import matplotlib.pyplot as plt
 
+def fer_n(rate=0.5):
+    """ Obtaining fer for growing n for fixed rate """
+    n = 20
+    input_arr = np.zeros(n)
+    output_arr = generate_erasures(input_arr, 0.2)
+    H = parity_matrix_permuter(20,40)
+    print(dumb_decoder(output_arr, H))
+
+
 def permuation_fer(k=3, n=6):
     """ Get the frame error rate for variations of H for a fixed (k, n) """
 
@@ -41,6 +50,4 @@ def permuation_fer(k=3, n=6):
     plt.xlim(0.2, 0.8)
     plt.show()
 
-permuation_fer()
-
-
+fer_n()
