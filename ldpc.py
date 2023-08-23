@@ -3,6 +3,7 @@ from networkx.algorithms import bipartite
 import networkx as nx
 import matplotlib.pyplot as plt
 import numpy as np
+from numpy import random
 from bec import generate_input_arr, generate_erasures
 
 
@@ -67,15 +68,6 @@ def create_parity_check_matrix(i,j):
 
 
 
-H = np.matrix([
-    [1, 1, 0, 0, 1, 0],
-    [1, 0, 0, 1, 0, 1],
-    [0, 1, 1, 0, 0, 1]
-]) 
-
-# Input array is a zero vector
-input_arr = np.zeros(6)
-
 def dumb_decoder(output_arr, H, max_iterations=100):
     """ Implementation of a SPA specific to the Binary Erasure Channel """
 
@@ -92,7 +84,9 @@ def dumb_decoder(output_arr, H, max_iterations=100):
 
         for j in range(H.shape[0]):
             
-            if not output_arr.item(0,j):
+            # If None value in output arr
+            if output_arr.item(0,j):
+                # If Parity check matrix value is also one
                 if H.item(j,i) == 1:
                     counter += 1
             else:
@@ -100,7 +94,7 @@ def dumb_decoder(output_arr, H, max_iterations=100):
         
         if counter == 1:
             # Find the position of erasure and replace it with the sum modulo 2 of the rest
-            output_arr[np.argwhere(np.isnan(output_arr))] = sum_row % 2
+            output_arr[0, np.argwhere(np.isnan(output_arr))] = sum_row % 2
         
         iterations += 1
         
@@ -108,6 +102,51 @@ def dumb_decoder(output_arr, H, max_iterations=100):
         if not np.isnan(output_arr.A1).any() or iterations == max_iterations:
             return output_arr
 
-    return False
+    return output_arr
 
-print(dumb_decoder(np.matrix([0, 0, 0, 0, 0, np.nan]), H))
+
+def test_decoder(H):
+    """ Create different permutations of a (3,6) erased code to see where it does not decode """
+    assert dumb_decoder(np.matrix([np.nan, 0, 0, 0, 0, np.nan]), H).tolist()[0] == [0.0, 0.0, 0.0, 0.0, 0.0, 0.0]
+    assert dumb_decoder(np.matrix([np.nan, 0, 0, 0, 0, 0]), H).tolist()[0] == [0.0, 0.0, 0.0, 0.0, 0.0, 0.0]
+    assert dumb_decoder(np.matrix([0, 0, 0, 0, 0, np.nan]), H).tolist()[0] == [0.0, 0.0, 0.0, 0.0, 0.0, 0.0]
+    assert dumb_decoder(np.matrix([0, 0, 0, 0, 0, 0]), H).tolist()[0] == [0.0, 0.0, 0.0, 0.0, 0.0, 0.0]
+    assert dumb_decoder(np.matrix([np.nan, 0, 0, np.nan, 0, 0]), H).tolist()[0] == [0.0, 0.0, 0.0, 0.0, 0.0, 0.0]
+    print("Tests passed!")
+
+
+def parity_matrix_permuter(k, n):
+    """ Given a specific input and output length, reuturns all the permutations of an H matrix combination 
+    k - Input Length
+    n - Codeword Length
+    Rate = k/n
+    """
+
+    arr = np.array(np.concatenate((np.ones(n-k), np.zeros(k))))
+    H = random.permutation(arr)
+
+    for i in range(1,(n-k)):
+        H = np.vstack((H, random.permutation(arr)))
+
+    return H
+
+
+H = np.matrix([
+    [1, 1, 0, 0, 1, 0],
+    [1, 0, 0, 1, 0, 1],
+    [0, 1, 1, 0, 0, 1]
+]) 
+
+
+
+
+for i in range(10):
+    H = parity_matrix_permuter(3,6)
+    print(H)
+
+
+"""
+for i in range(100):
+    t = generate_erasures(np.zeros(6), 0.97)
+    print(dumb_decoder(t, H))
+"""
