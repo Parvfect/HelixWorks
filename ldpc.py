@@ -34,45 +34,19 @@ def generate_tanner_graph(parity_check_matrix):
     plt.show()
     return G
 
-def decode_matrix(pcm, max_iterations):
-    """ 
-    Uses SPA for the Binary Erasure Channel to decode the output 
-    Returns False if Decoding unsuccesful (may be smarter to just return the sub optimal decoded)
-    """
-
-    copy_matrix = pcm.clone()
-    flag = False
-
-    while iterations < max_iterations: # There should be an and condition for theoretics 
-
-        # Row Decoding
-        for i in pcm:
-            if i.count_nans() == 1: # Should be generalised based on larger cases
-                erased_bit_location = find_erased_bit(i)
-                pcm[i][j] = get_sum(i) % 2
-        
-        # Column Decoding
-        for j in pcm:
-            if i.count_nans() == 1: # Should be generalised based on larger cases
-                erased_bit_location = find_erased_bit(i)
-                pcm[i][j] = get_sum(i) % 2
-        
-        if copy_matrix.nans() == 0:
-            return copy_matrix
-        
-    return False
 
 def create_parity_check_matrix(i,j):
     """ Using BEC create redundnacy code using erasure probability to generate partiy check matrix"""
     pass
 
-
-
 def dumb_decoder(output_arr, H, max_iterations=100):
     """ Implementation of a SPA specific to the Binary Erasure Channel """
 
+    # The column and row order needs some work - not sure if it is right 
+    # Using results without complete understanding
+
     iterations = 0
-    H = np.matrix(H).T
+    H = np.matrix(H)
     output_arr = np.matrix(output_arr)
 
     # Iterate through the rows of the parity check matrix
@@ -139,10 +113,6 @@ H = np.matrix([
 
 
 
-
-for i in range(10):
-    H = parity_matrix_permuter(3,6)
-    print(H)
 
 
 """
