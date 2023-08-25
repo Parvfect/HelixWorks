@@ -85,7 +85,7 @@ def test_decoder(H):
     print("Tests passed!")
 
 
-def parity_matrix_permuter(k, n, dv, dc, max_iterations=100000):
+def parity_matrix_permuter(k, n, dv, dc, max_iterations=1000000):
     """ Given a specific input and output length, reuturns all the permutations of an H matrix combination 
     k - Input Length
     n - Codeword Length
@@ -97,7 +97,7 @@ def parity_matrix_permuter(k, n, dv, dc, max_iterations=100000):
     iterations = 0
     temp_space = np.zeros((n, n-k))
 
-    while True:
+    while iterations < max_iterations:
         
         counter = 0
         for i in range(0, (n-k)):
@@ -113,6 +113,9 @@ def parity_matrix_permuter(k, n, dv, dc, max_iterations=100000):
 
         iterations += 1
 
+    if iterations == max_iterations:
+        print("No valid parity matrix found!")
+        
     return temp_space
 
 def test_parity_matrix(H, dv, dc, k, n):
@@ -122,7 +125,9 @@ def test_parity_matrix(H, dv, dc, k, n):
     assert np.count_nonzero(H) == dv*(n) == dc*(n-k)
     assert np.count_nonzero(H.sum(axis=1) == dv) == n
     assert np.count_nonzero(H.sum(axis=0) == dc) == n-k
-    print("Tests passed! Parity Matrix is Valid! \n{}".format(H))
+    print("Tests passed! Parity Matrix is Valid! \n{}".format(H.T))
+
+    return H
     
 
 
@@ -134,7 +139,13 @@ H = np.matrix([
 
 
 
+dv = 3
+dc = 6
+k = 7
+n = 14
+#H = test_parity_matrix(parity_matrix_permuter(k, n, dv, dc), dv, dc, k, n)
 
+#generate_tanner_graph(H)
 
 """
 for i in range(100):

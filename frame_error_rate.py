@@ -43,7 +43,7 @@ def fer_n(rate=0.5):
     plt.legend()
     plt.show()
 
-def permuation_fer(k=5, n=10):
+def permuation_fer(k=7, n=14):
     """ Get the frame error rate for variations of H for a fixed (k, n) """
 
     # Initalize input array of zeros
@@ -52,7 +52,7 @@ def permuation_fer(k=5, n=10):
 
     erasure_probabilities = np.arange(0,1,0.025)
 
-    for t in tqdm(range(10)):
+    for t in tqdm(range(20)):
         H = parity_matrix_permuter(5, 10, 2, 4)
         frame_error_rate = []
 
