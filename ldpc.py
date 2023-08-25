@@ -5,7 +5,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 from numpy import random
 from bec import generate_input_arr, generate_erasures
-
+from tqdm import tqdm
 
 def generate_tanner_graph(parity_check_matrix):
     """ Creates Tanner Graph for Parity Check Matrix - needs to be tested"""
@@ -34,10 +34,6 @@ def generate_tanner_graph(parity_check_matrix):
     plt.show()
     return G
 
-
-def create_parity_check_matrix(i,j):
-    """ Using BEC create redundnacy code using erasure probability to generate partiy check matrix"""
-    pass
 
 def dumb_decoder(output_arr, H, max_iterations=100):
     """ Implementation of a SPA specific to the Binary Erasure Channel """
@@ -89,20 +85,45 @@ def test_decoder(H):
     print("Tests passed!")
 
 
-def parity_matrix_permuter(k, n):
+def parity_matrix_permuter(k, n, dv, dc, max_iterations=100000):
     """ Given a specific input and output length, reuturns all the permutations of an H matrix combination 
     k - Input Length
     n - Codeword Length
     Rate = k/n
     """
 
-    arr = np.array(np.concatenate((np.ones(n-k), np.zeros(k))))
-    H = random.permutation(arr)
+    arr = np.array(np.concatenate((np.ones(dc), np.zeros(n - dc))))
+    arr = random.permutation(arr)
+    iterations = 0
+    temp_space = np.zeros((n, n-k))
 
-    for i in range(1,(n-k)):
-        H = np.vstack((H, random.permutation(arr)))
+    while True:
+        
+        counter = 0
+        for i in range(0, (n-k)):
+            temp_space[:,i] = random.permutation(arr) 
+        
+        for i in temp_space:
+            if not np.count_nonzero(i==1) == dv:
+                counter += 1
+                break
 
-    return H
+        if counter == 0:
+            break
+
+        iterations += 1
+
+    return temp_space
+
+def test_parity_matrix(H, dv, dc, k, n):
+    """ Verify that the parity matrix is valid """
+
+    assert H.shape == (n, n-k)
+    assert np.count_nonzero(H) == dv*(n) == dc*(n-k)
+    assert np.count_nonzero(H.sum(axis=1) == dv) == n
+    assert np.count_nonzero(H.sum(axis=0) == dc) == n-k
+    print("Tests passed! Parity Matrix is Valid! \n{}".format(H))
+    
 
 
 H = np.matrix([
@@ -120,3 +141,5 @@ for i in range(100):
     t = generate_erasures(np.zeros(6), 0.97)
     print(dumb_decoder(t, H))
 """
+
+test_parity_matrix(parity_matrix_permuter(5, 10, 2, 4), 2, 4, 5, 10)
