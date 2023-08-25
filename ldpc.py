@@ -141,5 +141,3 @@ for i in range(100):
     t = generate_erasures(np.zeros(6), 0.97)
     print(dumb_decoder(t, H))
 """
-
-test_parity_matrix(parity_matrix_permuter(5, 10, 2, 4), 2, 4, 5, 10)
