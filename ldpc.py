@@ -92,6 +92,10 @@ def parity_matrix_permuter(k, n, dv, dc, max_iterations=1000000):
     Rate = k/n
     """
 
+    if not dc*(n-k) == dv*(n):
+        print("Invalid Parity Check Matrix!")
+        return
+
     arr = np.array(np.concatenate((np.ones(dc), np.zeros(n - dc))))
     arr = random.permutation(arr)
     iterations = 0
@@ -143,7 +147,7 @@ dv = 3
 dc = 6
 k = 7
 n = 14
-#H = test_parity_matrix(parity_matrix_permuter(k, n, dv, dc), dv, dc, k, n)
+H = test_parity_matrix(parity_matrix_permuter(k, n, dv, dc), dv, dc, k, n)
 
 #generate_tanner_graph(H)
 
