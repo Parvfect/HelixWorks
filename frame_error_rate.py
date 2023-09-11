@@ -2,6 +2,7 @@
 
 from bec import generate_erasures
 from ldpc import parity_matrix_permuter, dumb_decoder
+from Hmatrixbaby import createHMatrix
 import numpy as np
 import matplotlib.pyplot as plt
 from tqdm import tqdm
@@ -12,11 +13,12 @@ def fer_n(rate=0.5):
     input_arr = np.zeros(n)
     
     iterations = 500
-    n = np.arange(20, 40, 5)   
+    n = [500]   
     erasure_probabilities = np.arange(0,1,0.025)
+    print("hello")
 
     for t in tqdm(n):
-        H = parity_matrix_permuter(t,2*t)
+        H = createHMatrix(3, 6, t,2*t)
         frame_error_rate = []
         input_arr = np.zeros(2*t)
 
@@ -53,7 +55,7 @@ def permuation_fer(k=7, n=14):
     erasure_probabilities = np.arange(0,1,0.025)
 
     for t in tqdm(range(20)):
-        H = parity_matrix_permuter(5, 10, 2, 4)
+        H = createHMatrix(3, 6, 500, 1000)
         frame_error_rate = []
 
         for i in tqdm(erasure_probabilities):
@@ -78,5 +80,5 @@ def permuation_fer(k=7, n=14):
 
     plt.show()
 
-#fer_n()
-permuation_fer()
+fer_n()
+#permuation_fer()

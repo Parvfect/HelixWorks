@@ -129,30 +129,6 @@ def test_parity_matrix(H, dv, dc, k, n):
     assert np.count_nonzero(H) == dv*(n) == dc*(n-k)
     assert np.count_nonzero(H.sum(axis=1) == dv) == n
     assert np.count_nonzero(H.sum(axis=0) == dc) == n-k
-    print("Tests passed! Parity Matrix is Valid! \n{}".format(H.T))
 
-    return H
+    return True
     
-
-
-H = np.matrix([
-    [1, 1, 0, 0, 1, 0],
-    [1, 0, 0, 1, 0, 1],
-    [0, 1, 1, 0, 0, 1]
-]) 
-
-
-
-dv = 3
-dc = 6
-k = 7
-n = 14
-H = test_parity_matrix(parity_matrix_permuter(k, n, dv, dc), dv, dc, k, n)
-
-#generate_tanner_graph(H)
-
-"""
-for i in range(100):
-    t = generate_erasures(np.zeros(6), 0.97)
-    print(dumb_decoder(t, H))
-"""

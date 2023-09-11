@@ -26,16 +26,16 @@ def getH(dv, dc, k, n):
     return arr
 
 
-def createHMatrix(Harr):
-    # Create H matrix from Harr
-    Harr = Harr//dc
-    H = np.zeros((n, n-k))
-    for i in range(n):
-        for j in Harr[i]:
-            H[i][j] = 1
+def createHMatrix(dv, dc, k, n):
 
+    Harr = getH(dv, dc, k, n)
+    # Create H matrix from Harr
+    H = np.zeros((n, n-k))
+    for (i,j) in enumerate(Harr):
+        H[i//dv, j//dc] = 1
+    return H
     # Need to double check this rubbish
-print(getH(3, 6, 500, 1000))
+
 
 
 # Convert H to Matrix form and feed into methods to see results
