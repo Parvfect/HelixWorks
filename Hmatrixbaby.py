@@ -1,44 +1,41 @@
 
+import numpy as np
 
-def column_permuter(H, dv, dc, k, n):
-    """ Randomly Add a 1 to the columns that don't have a 1 """
-        
-        for i in range(n-k):
-            if np.count_nonzero(H[:,i] == 1) == dv:
-                continue
-            else:
-                H[random.randint(0, n-1), i] = 1
-    
-        return H
-
-def row_permuter(H, dv, dc, k, n):
-    """ Randomly Add a 1 to the rows that don't have a 1 """
-        
-        for i in range(n):
-            if np.count_nonzero(H[i,:] == 1) == dc:
-                continue
-            else:
-                H[i, random.randint(0, n-k-1)] = 1
-    
-        return H
-
-def getH(k,n, dv, dc):
-    
+def getH(dv, dc, k, n):
     assert dv*(n) == dc*(n-k)
 
-    H = np.zeros((n,n-k))
-    counter = 0 
+    arr = np.arange(0, dv*n)
+    flag = 0
 
     while True:
-
-        if np.count_nonzero(H) == dv*(n) == dc*(n-k):
+        flag = 0
+        arr = np.random.permutation(arr)
+        
+    
+        t = [arr[i:i+dv] for i in range(0, len(arr), dv)]
+        # For each part check if it it connected to a unique check node
+        # If not, permute the part
+        
+        for i in t:
+            if len(np.unique(i//dc)) != dv:
+                flag +=1
+        
+        if flag == 0:
             break
+        
+    return arr
 
-        if counter % 2 == 0:
-            H = column_permuter(H, dv, dc, k, n)
-        else:
-            H = row_permuter(H, dv, dc, k, n)
 
-    return H
+def createHMatrix(Harr):
+    # Create H matrix from Harr
+    Harr = Harr//dc
+    H = np.zeros((n, n-k))
+    for i in range(n):
+        for j in Harr[i]:
+            H[i][j] = 1
 
-print(getH(7, 14, 3, 6))
+    # Need to double check this rubbish
+print(getH(3, 6, 500, 1000))
+
+
+# Convert H to Matrix form and feed into methods to see results
