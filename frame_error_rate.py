@@ -2,7 +2,7 @@
 
 from bec import generate_erasures
 from ldpc import parity_matrix_permuter, dumb_decoder
-from Hmatrixbaby import createHMatrix
+from Hmatrixbaby import createHMatrix, getH
 import numpy as np
 import matplotlib.pyplot as plt
 from tqdm import tqdm
@@ -80,5 +80,5 @@ def permuation_fer(k=7, n=14):
 
     plt.show()
 
-fer_n()
-#permuation_fer()
+
+print(getH(2, 4, 3, 6))
