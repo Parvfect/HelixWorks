@@ -4,7 +4,8 @@ from Hmatrixbaby import createHMatrix, getH
 from networkx.algorithms import bipartite
 import networkx as nx
 import matplotlib.pyplot as plt
-
+import time
+from tqdm import tqdm
 
 class Node:
 
@@ -44,6 +45,7 @@ class VariableNode(Node):
         super().__init__(dv, identifier)
 
 class TannerGraph:
+    """ Initializes empty, on establishing connections creates H and forms links """
 
     def __init__(self, dv, dc, k, n):
         self.vns = [VariableNode(dv, i) for i in range(n)]
@@ -55,10 +57,11 @@ class TannerGraph:
     
     def establish_connections(self):
         """ Establishes connections between variable nodes and check nodes """
-        Harr = getH(self.dv, self.dc, self.k, self.n)%4
-        
+        self.Harr = getH(self.dv, self.dc, self.k, self.n)
+        Harr = Harr//self.dc
+
         # Divide Harr into dv parts
-        Harr = np.split(Harr, self.n//self.dv)
+        Harr = [Harr[i:i+self.dv] for i in range(0, len(Harr), self.dv)]
 
         # Establish connections
         for (i,j) in enumerate(Harr):
@@ -84,12 +87,51 @@ class TannerGraph:
         # Utilise the links to add edges
         for (i,j) in enumerate(self.cns):
             for k in j.links:
-                G.add_edge(i, k.identifier + rows, weight=1)
+                G.add_edge(i, k + rows, weight=1)
     
     
         nx.draw(G, with_labels=True)
         plt.show()
         return G
 
-t = TannerGraph(2, 4, 3, 6)
-t.establish_connections()
+    def bec_decode(self, max_iterations=100):
+        """ Assuming VNs have been initialized with values, perform BEC decoding """
+
+        for i in range(max_iterations):
+            # For each check node 
+            for (i,j) in enumerate(self.cns):
+                # See all connection VN values
+                
+                erasure_counter = 0
+                # Counting number of erasures
+                for k in j.links:
+                    if not self.vns[k].value:
+                        erasure_counter += 1
+
+                # If Erasure counter is equal to 1, fill erasure
+                if erasure_counter == 1:
+                    
+                    sum_links = 0
+                    erasure_index = 0
+                    
+                    for k in j.links:
+                        # Collect all values in an array
+                        if not self.vns[k].value:
+                            erasure_index = k
+                        else:
+                            sum_links += self.vns[k].value
+                    
+                    # Replace erasure with sum modulo 2
+                    self.vns[erasure_index].value = sum_links % 2
+            
+            # Check if all values are filled
+            if np.all([i.value for i in self.vns]):
+                print("Decoding successful")
+                return [i.value for i in self.vns]
+        
+        print("Decoding unsuccessful")
+        return [i.value for i in self.vns]
+    
+
+
+
