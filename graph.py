@@ -5,7 +5,10 @@ from networkx.algorithms import bipartite
 import networkx as nx
 import matplotlib.pyplot as plt
 import time
+from bec import generate_erasures
 from tqdm import tqdm
+
+# Graph Implementation - similar to Adjacency List
 
 class Node:
 
@@ -58,7 +61,7 @@ class TannerGraph:
     def establish_connections(self):
         """ Establishes connections between variable nodes and check nodes """
         self.Harr = getH(self.dv, self.dc, self.k, self.n)
-        Harr = Harr//self.dc
+        Harr = self.Harr//self.dc
 
         # Divide Harr into dv parts
         Harr = [Harr[i:i+self.dv] for i in range(0, len(Harr), self.dv)]
@@ -68,7 +71,7 @@ class TannerGraph:
             for k in j:
                 self.vns[i].add_link(self.cns[k])
                 self.cns[k].add_link(self.vns[i])
-        
+
     def visualise(self):
         """ Visualise Tanner Graph """
         G = nx.Graph()
@@ -103,35 +106,54 @@ class TannerGraph:
                 # See all connection VN values
                 
                 erasure_counter = 0
+                
                 # Counting number of erasures
                 for k in j.links:
-                    if not self.vns[k].value:
+                    if np.isnan(self.vns[int(k)].value):
                         erasure_counter += 1
-
+                
                 # If Erasure counter is equal to 1, fill erasure
                 if erasure_counter == 1:
-                    
                     sum_links = 0
                     erasure_index = 0
                     
                     for k in j.links:
                         # Collect all values in an array
-                        if not self.vns[k].value:
+                        if self.vns[int(k)].value:
                             erasure_index = k
                         else:
-                            sum_links += self.vns[k].value
+                            sum_links += self.vns[int(k)].value
                     
                     # Replace erasure with sum modulo 2
-                    self.vns[erasure_index].value = sum_links % 2
+                    self.vns[int(erasure_index)].value = sum_links % 2
             
             # Check if all values are filled
-            if np.all([i.value for i in self.vns]):
+            if np.all([not np.isnan(i.value) for i in self.vns]):
                 print("Decoding successful")
                 return [i.value for i in self.vns]
         
         print("Decoding unsuccessful")
         return [i.value for i in self.vns]
-    
+
+    def assign_values(self, arr):   
+
+        assert len(arr) == len(self.vns) 
+
+        for i in range(len(arr)):
+            self.vns[i].value = arr[i]
 
 
+"""
+# Test
+t = TannerGraph(2,4,20,40)
+t.establish_connections()
 
+# Links does not seem to be the problem
+
+arr = np.zeros(40)
+arr = generate_erasures(arr,0.2)
+
+t.assign_values(arr)
+
+print(t.bec_decode())
+"""
