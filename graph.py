@@ -12,6 +12,7 @@ from pstats import Stats
 import re
 
 # Graph Implementation - similar to Adjacency List
+# Need to speeden up the decoding for the Graphs
 
 class Node:
 
@@ -39,7 +40,6 @@ class Node:
         """ Replaces a link with another link """
         self.links[index] = node
         return self.links
-    
     
 class CheckNode(Node):
 
@@ -177,10 +177,6 @@ class TannerGraph:
             plt.show()
 
         return frame_error_rate
-
-# Test
-
-
 
 with Profile() as profile:
     t = TannerGraph(3, 6, 500, 1000)
