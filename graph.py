@@ -7,6 +7,9 @@ import matplotlib.pyplot as plt
 import time
 from bec import generate_erasures
 from tqdm import tqdm
+from cProfile import Profile
+from pstats import Stats
+import re
 
 # Graph Implementation - similar to Adjacency List
 
@@ -128,7 +131,7 @@ class TannerGraph:
                     self.vns[int(erasure_index)].value = sum_links % 2
             
             # Check if all values are filled
-            if np.all([not np.isnan(i.value) for i in self.vns]):
+            if not np.any([np.isnan(i.value) for i in self.vns]):
                 return np.array([i.value for i in self.vns])
         
         return np.array([i.value for i in self.vns])
@@ -140,26 +143,75 @@ class TannerGraph:
         for i in range(len(arr)):
             self.vns[i].value = arr[i]
 
+    def frame_error_rate(self, iterations=20, plot=False):
+        """ Get the FER for the Tanner Graph """
+
+        erasure_probabilities = np.arange(0,1,0.05)
+        frame_error_rate = []
+        input_arr = np.zeros(2*self.k)
+
+        for i in tqdm(erasure_probabilities):
+
+            counter = 0
+            for j in range(iterations):
+                
+                # Assigning values to Variable Nodes after generating erasures in zero array
+                self.assign_values(generate_erasures(input_arr, i))
+
+                # Getting the average error rates for iteration runs
+                if np.all(self.bec_decode() == input_arr):
+                    counter += 1
+            
+            # Calculate Error Rate and append to list
+            error_rate = (iterations - counter)/100
+            frame_error_rate.append(error_rate)
+        
+        if plot:
+            plt.plot(erasure_probabilities, frame_error_rate, label="n = " + str(t))
+            plt.title("Frame Error Rate as a Function of Erasure Probabilities for varying n")
+            plt.ylabel("Frame Error Rate")
+            plt.xlabel("Erasure Probability")
+
+            # Displaying final figure
+            plt.legend()
+            plt.show()
+
+        return frame_error_rate
 
 # Test
 
-"""
-t = TannerGraph(3,6,500,1000)
 
-startime = time.time()
-t.establish_connections()
-print("Establishing connections takes - {}".format(time.time() - startime))
 
-# Links does not seem to be the problem
+with Profile() as profile:
+    t = TannerGraph(3, 6, 500, 1000)
+    t.establish_connections()
+    arr = np.zeros(1000)
+    arr = generate_erasures(arr,0.4)
+    t.assign_values(arr)
+    t.bec_decode()
+    t.frame_error_rate(plot=True)
+    (
+        Stats(profile)
+        .strip_dirs()
+        .sort_stats("cumtime")
+        .print_stats(10)
+    )
+    
+    #t.establish_connections()
+    
+    # Links does not seem to be the problem
 
-arr = np.zeros(1000)
-arr = generate_erasures(arr,0.7)
+    """
+    arr = np.zeros(1000)
+    arr = generate_erasures(arr,0.7)
 
-startime = time.time()
-t.assign_values(arr)
-print("Assigning values takes - {}".format(time.time() - startime))
+    startime = time.time()
+    t.assign_values(arr)
+    print("Assigning values takes - {}".format(time.time() - startime))
 
-startime = time.time()
-t.bec_decode()
-print("BEC decoding takes - {}".format(time.time() - startime))
-"""
+    startime = time.time()
+    t.bec_decode()
+    print("BEC decoding takes - {}".format(time.time() - startime))
+
+    cProfile.run('re.compile("foo|bar")')
+    """

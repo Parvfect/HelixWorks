@@ -28,7 +28,7 @@ density_evolution(0.5, 3, 6)
 density_evolution(0.6, 3, 6)
 density_evolution(0.7, 3, 6)
 plt.xlim(0, 100)
-plt.ylim(0, 1)
+plt.ylim(0, 1)  
 plt.show()
 
 
