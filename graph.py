@@ -129,11 +129,9 @@ class TannerGraph:
             
             # Check if all values are filled
             if np.all([not np.isnan(i.value) for i in self.vns]):
-                print("Decoding successful")
-                return [i.value for i in self.vns]
+                return np.array([i.value for i in self.vns])
         
-        print("Decoding unsuccessful")
-        return [i.value for i in self.vns]
+        return np.array([i.value for i in self.vns])
 
     def assign_values(self, arr):   
 
@@ -143,17 +141,25 @@ class TannerGraph:
             self.vns[i].value = arr[i]
 
 
-"""
 # Test
-t = TannerGraph(2,4,20,40)
+
+"""
+t = TannerGraph(3,6,500,1000)
+
+startime = time.time()
 t.establish_connections()
+print("Establishing connections takes - {}".format(time.time() - startime))
 
 # Links does not seem to be the problem
 
-arr = np.zeros(40)
-arr = generate_erasures(arr,0.2)
+arr = np.zeros(1000)
+arr = generate_erasures(arr,0.7)
 
+startime = time.time()
 t.assign_values(arr)
+print("Assigning values takes - {}".format(time.time() - startime))
 
-print(t.bec_decode())
+startime = time.time()
+t.bec_decode()
+print("BEC decoding takes - {}".format(time.time() - startime))
 """

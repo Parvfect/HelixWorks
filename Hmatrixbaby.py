@@ -34,7 +34,6 @@ def createHMatrix(dv, dc, k, n):
     for (i,j) in enumerate(Harr):
         H[i//dv, j//dc] = 1
     return H
-    # Need to double check this rubbish
 
 
 

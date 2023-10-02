@@ -70,9 +70,9 @@ def dumb_decoder(output_arr, H, max_iterations=100):
         
         # If there are no erasures left or max iterations reached return the output array
         if not np.isnan(output_arr.A1).any() or iterations == max_iterations:
-            return output_arr
+            return np.array(output_arr)
 
-    return output_arr
+    return np.array(output_arr)
 
 
 def test_decoder(H):
