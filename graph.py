@@ -25,8 +25,8 @@ class Node:
         """ Adds a link to the node. Throws an error if the node is full """
         
         # Check if node is full
-        if np.all(self.links):
-            raise ValueError("Node is full")
+        #if np.all(self.links):
+         #   raise ValueError("Node is full")
 
         # Add to empty link 
         for (i,j) in enumerate(self.links):
@@ -103,13 +103,16 @@ class TannerGraph:
     def bec_decode(self, max_iterations=100):
         """ Assuming VNs have been initialized with values, perform BEC decoding """
 
-        for i in range(max_iterations):
-            # For each check node 
+        filled_vns = sum([1 for i in self.vns if not np.isnan(i.value)])
+        resolved_vns = 0
+        resolved_vns_temp = 0
+    
+        for iteration in range(max_iterations):
+           
+            # For each check node  
             for (i,j) in enumerate(self.cns):
                 # See all connection VN values
-                
                 erasure_counter = 0
-                
                 # Counting number of erasures
                 for k in j.links:
                     if np.isnan(self.vns[int(k)].value):
@@ -129,11 +132,13 @@ class TannerGraph:
                     
                     # Replace erasure with sum modulo 2
                     self.vns[int(erasure_index)].value = sum_links % 2
+                    resolved_vns+=1
             
-            # Check if all values are filled
-            if not np.any([np.isnan(i.value) for i in self.vns]):
-                return np.array([i.value for i in self.vns])
-        
+            if resolved_vns == resolved_vns_temp or filled_vns+resolved_vns == self.n:
+                break
+
+            resolved_vns_temp = resolved_vns
+
         return np.array([i.value for i in self.vns])
 
     def assign_values(self, arr):   
@@ -143,18 +148,18 @@ class TannerGraph:
         for i in range(len(arr)):
             self.vns[i].value = arr[i]
 
-    def frame_error_rate(self, iterations=20, plot=False):
+    def frame_error_rate(self, iterations=10, plot=False):
         """ Get the FER for the Tanner Graph """
 
-        erasure_probabilities = np.arange(0,1,0.05)
+        erasure_probabilities = np.arange(0.3,0.5,0.05)
         frame_error_rate = []
-        input_arr = np.zeros(2*self.k)
+        input_arr = np.zeros(self.n)
 
         for i in tqdm(erasure_probabilities):
-
             counter = 0
             for j in range(iterations):
                 
+                self.establish_connections()
                 # Assigning values to Variable Nodes after generating erasures in zero array
                 self.assign_values(generate_erasures(input_arr, i))
 
@@ -163,7 +168,7 @@ class TannerGraph:
                     counter += 1
             
             # Calculate Error Rate and append to list
-            error_rate = (iterations - counter)/100
+            error_rate = (iterations - counter)/iterations
             frame_error_rate.append(error_rate)
         
         if plot:
@@ -174,18 +179,23 @@ class TannerGraph:
 
             # Displaying final figure
             plt.legend()
+            plt.ylim(0,1)
             plt.show()
 
         return frame_error_rate
 
+
+
 with Profile() as profile:
-    t = TannerGraph(3, 6, 500, 1000)
+    t = TannerGraph(3, 6, 10000, 20000)
     t.establish_connections()
-    arr = np.zeros(1000)
-    arr = generate_erasures(arr,0.4)
-    t.assign_values(arr)
-    t.bec_decode()
-    t.frame_error_rate(plot=True)
+    #arr = np.zeros(1000)
+    #arr = generate_erasures(arr,0.2)
+    #t.assign_values(arr)
+    #print(t.bec_decode())
+    
+    #t.frame_error_rate(plot=True)
+    
     (
         Stats(profile)
         .strip_dirs()
@@ -211,3 +221,4 @@ with Profile() as profile:
 
     cProfile.run('re.compile("foo|bar")')
     """
+

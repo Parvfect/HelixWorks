@@ -10,7 +10,6 @@ def getH(dv, dc, k, n):
     while True:
         flag = 0
         arr = np.random.permutation(arr)
-        
     
         t = [arr[i:i+dv] for i in range(0, len(arr), dv)]
         # For each part check if it it connected to a unique check node
