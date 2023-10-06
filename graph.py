@@ -8,6 +8,7 @@ import time
 from bec import generate_erasures
 from tqdm import tqdm
 from cProfile import Profile
+from density_evolution import threshold_binary_search
 from pstats import Stats
 import re
 
@@ -148,10 +149,10 @@ class TannerGraph:
         for i in range(len(arr)):
             self.vns[i].value = arr[i]
 
-    def frame_error_rate(self, iterations=10, plot=False):
+    def frame_error_rate(self, iterations=20, plot=False):
         """ Get the FER for the Tanner Graph """
 
-        erasure_probabilities = np.arange(0.3,0.5,0.05)
+        erasure_probabilities = np.arange(0, 1,0.05)
         frame_error_rate = []
         input_arr = np.zeros(self.n)
 
@@ -173,7 +174,7 @@ class TannerGraph:
         
         if plot:
             plt.plot(erasure_probabilities, frame_error_rate, label="n = " + str(t))
-            plt.title("Frame Error Rate as a Function of Erasure Probabilities for varying n")
+            plt.title("Frame Error Rate for BEC for {}{} LDPC Code".format(self.k, self.n))
             plt.ylabel("Frame Error Rate")
             plt.xlabel("Erasure Probability")
 
@@ -187,14 +188,8 @@ class TannerGraph:
 
 
 with Profile() as profile:
-    t = TannerGraph(3, 6, 10000, 20000)
-    t.establish_connections()
-    #arr = np.zeros(1000)
-    #arr = generate_erasures(arr,0.2)
-    #t.assign_values(arr)
-    #print(t.bec_decode())
-    
-    #t.frame_error_rate(plot=True)
+    t = TannerGraph(3, 6, 4000, 8000)
+    t.frame_error_rate(plot=True)
     
     (
         Stats(profile)

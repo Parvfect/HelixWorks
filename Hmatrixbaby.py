@@ -1,6 +1,10 @@
 
 import numpy as np
 
+
+def len_unique_elements(arr):
+    return len(set(arr))
+
 def getH(dv, dc, k, n):
     assert dv*(n) == dc*(n-k)
 
@@ -14,16 +18,18 @@ def getH(dv, dc, k, n):
         t = [arr[i:i+dv] for i in range(0, len(arr), dv)]
         # For each part check if it it connected to a unique check node
         # If not, permute the part
+
         
         for i in t:
-            if len(np.unique(i//dc)) != dv:
+            i = i//dc
+            #if len(np.unique(i)) != dv:
+            if len_unique_elements(i) != dv:
                 flag +=1
         
         if flag == 0:
             break
         
     return arr
-
 
 def createHMatrix(dv, dc, k, n):
 
