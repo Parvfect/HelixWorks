@@ -135,6 +135,9 @@ def permuation_fer(k=500, n=1000, iterations=20):
     plt.show()
 
 
+def ensemble_average():
+
+
 #fer_n_graph()
 permuation_fer()
 
