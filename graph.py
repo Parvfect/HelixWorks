@@ -149,71 +149,78 @@ class TannerGraph:
         for i in range(len(arr)):
             self.vns[i].value = arr[i]
 
-    def frame_error_rate(self, iterations=20, plot=False):
+    def frame_error_rate(self, iterations=50, plot=False, ensemble=True):
         """ Get the FER for the Tanner Graph """
 
-        erasure_probabilities = np.arange(0, 1,0.05)
+        erasure_probabilities = np.arange(0,1,0.05)
         frame_error_rate = []
         input_arr = np.zeros(self.n)
+        self.establish_connections()
 
         for i in tqdm(erasure_probabilities):
             counter = 0
+            prev_error = 5
             for j in range(iterations):
                 
-                self.establish_connections()
+                if ensemble:
+                    self.establish_connections()
+                
                 # Assigning values to Variable Nodes after generating erasures in zero array
                 self.assign_values(generate_erasures(input_arr, i))
 
                 # Getting the average error rates for iteration runs
                 if np.all(self.bec_decode() == input_arr):
-                    counter += 1
-            
+                    counter += 1    
+                
+                """
+                # Adaptive Iterator
+                if prev_error - ((iterations - counter)/iterations) < 0.001:
+                    break
+
+                prev_error = (iterations - counter)/iterations
+                """
+
             # Calculate Error Rate and append to list
             error_rate = (iterations - counter)/iterations
             frame_error_rate.append(error_rate)
         
         if plot:
-            plt.plot(erasure_probabilities, frame_error_rate, label="n = " + str(t))
-            plt.title("Frame Error Rate for BEC for {}{} LDPC Code".format(self.k, self.n))
+            plt.plot(erasure_probabilities, frame_error_rate, label = "({},{})".format(self.k, self.n))
+            plt.title("Frame Error Rate for BEC for {}-{}  {}-{} LDPC Code".format(self.k, self.n, self.dv, self.dc))
             plt.ylabel("Frame Error Rate")
             plt.xlabel("Erasure Probability")
 
             # Displaying final figure
             plt.legend()
-            plt.ylim(0,1)
-            plt.show()
+            #plt.ylim(0,1)
 
         return frame_error_rate
 
 
 
 with Profile() as profile:
+    t = TannerGraph(3, 6, 100, 200)
+    t.frame_error_rate(plot=True, ensemble=False)
+    t = TannerGraph(3, 6, 500, 1000)
+    t.frame_error_rate(plot=True, ensemble=False)
+    t = TannerGraph(3, 6, 1000, 2000)
+    t.frame_error_rate(plot=True, ensemble=False)
+    t = TannerGraph(3, 6, 2000, 4000)
+    t.frame_error_rate(plot=True, ensemble=False)
     t = TannerGraph(3, 6, 4000, 8000)
-    t.frame_error_rate(plot=True)
+    t.frame_error_rate(plot=True, ensemble=False)
+    t = TannerGraph(3, 6, 8000, 16000)
+    t.frame_error_rate(plot=True, ensemble=False)
     
+    # Get the Threshold
+    threshold = threshold_binary_search(self.dv, self.dc)
+    plt.axvline(x=threshold, color='r', linestyle='--', label="Threshold")
+
+    
+    plt.show()
     (
         Stats(profile)
         .strip_dirs()
         .sort_stats("cumtime")
         .print_stats(10)
     )
-        
-    #t.establish_connections()
-    
-    # Links does not seem to be the problem
-
-    """
-    arr = np.zeros(1000)
-    arr = generate_erasures(arr,0.7)
-
-    startime = time.time()
-    t.assign_values(arr)
-    print("Assigning values takes - {}".format(time.time() - startime))
-
-    startime = time.time()
-    t.bec_decode()
-    print("BEC decoding takes - {}".format(time.time() - startime))
-
-    cProfile.run('re.compile("foo|bar")')
-    """
-
