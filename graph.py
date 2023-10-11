@@ -186,41 +186,42 @@ class TannerGraph:
         
         if plot:
             plt.plot(erasure_probabilities, frame_error_rate, label = "({},{})".format(self.k, self.n))
-            plt.title("Frame Error Rate for BEC for {}-{}  {}-{} LDPC Code".format(self.k, self.n, self.dv, self.dc))
-            plt.ylabel("Frame Error Rate")
-            plt.xlabel("Erasure Probability")
+            #plt.title("Frame Error Rate for BEC for {}-{}  {}-{} LDPC Code".format(self.k, self.n, self.dv, self.dc))
+            #plt.ylabel("Frame Error Rate")
+            #plt.xlabel("Erasure Probability")
 
             # Displaying final figure
-            plt.legend()
+            #plt.legend()
             #plt.ylim(0,1)
 
         return frame_error_rate
 
 
+if __name__ == "__main__":
 
-with Profile() as profile:
-    t = TannerGraph(3, 6, 100, 200)
-    t.frame_error_rate(plot=True, ensemble=False)
-    t = TannerGraph(3, 6, 500, 1000)
-    t.frame_error_rate(plot=True, ensemble=False)
-    t = TannerGraph(3, 6, 1000, 2000)
-    t.frame_error_rate(plot=True, ensemble=False)
-    t = TannerGraph(3, 6, 2000, 4000)
-    t.frame_error_rate(plot=True, ensemble=False)
-    t = TannerGraph(3, 6, 4000, 8000)
-    t.frame_error_rate(plot=True, ensemble=False)
-    t = TannerGraph(3, 6, 8000, 16000)
-    t.frame_error_rate(plot=True, ensemble=False)
-    
-    # Get the Threshold
-    threshold = threshold_binary_search(self.dv, self.dc)
-    plt.axvline(x=threshold, color='r', linestyle='--', label="Threshold")
+    with Profile() as profile:
+        t = TannerGraph(3, 6, 100, 200)
+        t.frame_error_rate(plot=True, ensemble=False)
+        t = TannerGraph(3, 6, 500, 1000)
+        t.frame_error_rate(plot=True, ensemble=False)
+        t = TannerGraph(3, 6, 1000, 2000)
+        t.frame_error_rate(plot=True, ensemble=False)
+        t = TannerGraph(3, 6, 2000, 4000)
+        t.frame_error_rate(plot=True, ensemble=False)
+        t = TannerGraph(3, 6, 4000, 8000)
+        t.frame_error_rate(plot=True, ensemble=False)
+        t = TannerGraph(3, 6, 8000, 16000)
+        t.frame_error_rate(plot=True, ensemble=False)
+        
+        # Get the Threshold
+        threshold = threshold_binary_search(self.dv, self.dc)
+        plt.axvline(x=threshold, color='r', linestyle='--', label="Threshold")
 
-    
-    plt.show()
-    (
-        Stats(profile)
-        .strip_dirs()
-        .sort_stats("cumtime")
-        .print_stats(10)
-    )
+        
+        plt.show()
+        (
+            Stats(profile)
+            .strip_dirs()
+            .sort_stats("cumtime")
+            .print_stats(10)
+        )
