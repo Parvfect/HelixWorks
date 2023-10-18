@@ -142,6 +142,16 @@ class TannerGraph:
 
         return np.array([i.value for i in self.vns])
 
+    def coupon_collector_decoding(self, max_iterations=100):
+        """ Decodes for the case of symbol possiblities for each variable node 
+            utilising Belief Propagation - may be worth doing for BEC as well 
+        """
+        # For each variable node, get the set of compability symbols for the linear equation
+        # Repeat over each variable node
+        # For check node update - find intersection of all sets and update the variable nodes
+        # Iterate until convergence
+        pass
+
     def assign_values(self, arr):   
 
         assert len(arr) == len(self.vns) 
