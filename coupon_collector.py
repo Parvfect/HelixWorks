@@ -5,6 +5,7 @@ import numpy as np
 from graph import TannerGraph
 from Hmatrixbaby import createHMatrix
 from scipy.linalg import null_space
+import sympy as sympy
 
 def get_symbols(motifs, k):
     """ Implement n choose k and get all the symbols from the motifs """
@@ -21,11 +22,11 @@ def coupon_collector_channel(arr, R):
     return output_arr
 
 def htog():
-    H = createHMatrix(3,6, 4, 8)
-    Gs = null_space(H.T)
-    
-    G = Gs[:, 0:4]
-    print(np.dot(G[0],(H.T)))
+    H = createHMatrix(3,6, 10, 20)
+    # Reduce H to row echelon form
+    print(H)
+    H = sympy.Matrix(H, pivots=False, normalize_last=False)
+    print(H.rref())
 
 
 # 8C4 Model
