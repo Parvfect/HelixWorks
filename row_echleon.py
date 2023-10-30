@@ -74,7 +74,7 @@ def standard_H_to_G(H, ffdim=2, switches = None):
     k = n - H.shape[0]
     P = H[:,0:k]
     G = np.hstack((np.eye(k), P.T))
-    print(G)
+    print("Standard Form G \n",G)
     print()
     if switches: 
         for i in switches:
@@ -84,10 +84,13 @@ def standard_H_to_G(H, ffdim=2, switches = None):
 
     return G
 
-H = createHMatrix(3, 6, 10, 20)
+H = createHMatrix(3, 6, 5, 10)
+print("Initial Transposed H Matrix \n", H.T)
 H_rref = get_reduced_row_echleon_form_H(H)
 H, switches = switch_columns(H_rref, check_standard_form_variance(H_rref))
+print("Standard Form \n", H)
 G = standard_H_to_G(H, switches=switches)
+print("Repeated Column Operations G \n",G)
 
 
 
