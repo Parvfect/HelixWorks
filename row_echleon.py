@@ -3,49 +3,81 @@
 
 import sympy as sympy 
 import numpy as np
+from Hmatrixbaby import createHMatrix
+# Assuming the condition to form a H matrix reduces a row echleon H to standard form
 
-"""
-Pivot the matrix
-Find the pivot, the first non-zero entry in the first column of the matrix.
-Interchange rows, moving the pivot row to the first row.
-Multiply each element in the pivot row by the inverse of the pivot, so the pivot equals 1.
-Add multiples of the pivot row to each of the lower rows, so every element in the pivot column of the lower rows equals 0.
-"""
 
-def row_echleon(arr):
-    # Find the pivot - first non-zero entry in the first column of the matrix.
-    # Interchange rows
-    # Multiply each element in the pivot row by the inverse of the pivot
-    # Add multiples of the pivot row to each of the lower rows so every element in the pivot column of the lower rows equals 0
-    # Repeat until all rows have been pivoted
+def get_reduced_row_echleon_form_H(H, ffdim=2):
+    """ Returns the reduced row echleon form of H """
+    H_rref = sympy.Matrix(H.T).rref()[0]
 
-    pivot, pivot_index = 0, 0
+    # Convert to finite field dimension
+    for i in range(H_rref.shape[0]):
+        for j in range(H_rref.shape[1]):
+            H_rref[i,j] = H_rref[i,j]%ffdim
+     
+    # Convert to Integer Matrix
+    return np.array(H_rref).astype(int)
 
-    for i in range(20):
-        for i in range(arr.shape[1]):
-            if arr[0,i] != 0:
-                pivot = arr[0,i]
-                pivot_index = i
-                break
+def check_standard_form_variance(H):
+    """ Checks if the H matrix is in standard form and returns columns that need changing """
 
-        # Interchange rows
-        arr[0], arr[pivot_index] = arr[pivot_index], arr[0]
+    n = H.shape[1]
+    k = n - H.shape[0]
+    shape = H.shape
+    I_dim = n-k
+    I = np.eye(I_dim)
+    columns_to_change = {}
+    rows = shape[1]
+    
+    # Check if the last I_dim columns are I
+    if np.all(H[:,k:n] == I):
+        return None
+    else:
+        # Find the columns that need changing
+        for i in range(k, n):
+            if not np.all(H[:,i] == I[:,i-k]):
+                columns_to_change[i] = I[:,i-k]
+    
+    return columns_to_change
 
-        # Multiply each element in the pivot row by the inverse of the pivot
-        if pivot != 1:
-            for i in range(len(arr[0])):
-                arr[0][i] = arr[0][i] / pivot
+def find_columns_to_change(H, columns_to_change):
+    """ Finds column switches to be made to get the H matrix in standard form """
+    
+    print(H)
+    print(columns_to_change)
+    
+    n = H.shape[1]
+    k = n - H.shape[0]
+    switches = []
+    # Columns will be independent in I don't need to mark them
+    for i in columns_to_change.keys():
+        for j in range(n):
+            if np.all(H[:,j] == columns_to_change[i]):
+                switches.append((i,j))
+                continue
 
-        # Add multiples of the pivot row to each of the lower rows so every element in the pivot column of the lower rows equals 0
-        for i in range(1, len(arr)):
-            if arr[i][pivot_index] != 0:
-                multiple = arr[i][pivot_index]
-                for j in range(len(arr[i])):
-                    arr[i][j] = arr[i][j] - (multiple * arr[0][j])
-       
-    print(arr)
+    if len(switches) != len(columns_to_change):
+        print("Cannot convert to Standard Form")
 
-t = np.random.rand(3,3)
-print(t)
-row_echleon(t)
+    return switches
+
+def make_column_switches(H, switches):
+    """ Switches the columns of H to get it in standard form """
+    for i in switches:
+        t = H[:,i[0]]
+        H[:,i[0]] = H[:,i[1]]
+        H[:,i[1]] = t
+    return H
+
+def invert_standard_H(H, binary=True):
+    """ Inverts the standard H matrix to get the Generator Matrix"""
+    pass
+
+H = createHMatrix(3, 6, 5, 10)
+H_rref = get_reduced_row_echleon_form_H(H)
+print(find_columns_to_change(H_rref, check_standard_form_variance(H_rref)))
+#row_echleon(H.T)
+
+
 

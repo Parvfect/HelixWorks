@@ -210,18 +210,9 @@ class TannerGraph:
 if __name__ == "__main__":
 
     with Profile() as profile:
-        t = TannerGraph(3, 6, 100, 200)
-        t.frame_error_rate(plot=True, ensemble=False)
         t = TannerGraph(3, 6, 500, 1000)
         t.frame_error_rate(plot=True, ensemble=False)
-        t = TannerGraph(3, 6, 1000, 2000)
-        t.frame_error_rate(plot=True, ensemble=False)
-        t = TannerGraph(3, 6, 2000, 4000)
-        t.frame_error_rate(plot=True, ensemble=False)
-        t = TannerGraph(3, 6, 4000, 8000)
-        t.frame_error_rate(plot=True, ensemble=False)
-        t = TannerGraph(3, 6, 8000, 16000)
-        t.frame_error_rate(plot=True, ensemble=False)
+        t
         
         # Get the Threshold
         threshold = threshold_binary_search(self.dv, self.dc)
