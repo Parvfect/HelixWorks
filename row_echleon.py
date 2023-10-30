@@ -41,43 +41,53 @@ def check_standard_form_variance(H):
     
     return columns_to_change
 
-def find_columns_to_change(H, columns_to_change):
-    """ Finds column switches to be made to get the H matrix in standard form """
-    
-    print(H)
-    print(columns_to_change)
-    
+def switch_columns(H, columns_to_change):
+    """ Finds and makes the necessary column switches to convert H to standard form """
+ 
     n = H.shape[1]
     k = n - H.shape[0]
+    column_positions = list(columns_to_change.keys())
+    changes_made = []
     switches = []
-    # Columns will be independent in I don't need to mark them
-    for i in columns_to_change.keys():
+    I = np.eye(n-k)
+    
+    for i in column_positions:
         for j in range(n):
-            if np.all(H[:,j] == columns_to_change[i]):
+            if np.all(H[:,j] == I[:, i-k]):
+                if j in changes_made:
+                    continue
+                changes_made.append(i)
                 switches.append((i,j))
-                continue
+                t = H[:,i].copy()
+                H[:,i] = H[:,j]
+                H[:,j] = t
+                break
 
-    if len(switches) != len(columns_to_change):
+    if not columns_to_change:
         print("Cannot convert to Standard Form")
 
-    return switches
+    return H, switches
 
-def make_column_switches(H, switches):
-    """ Switches the columns of H to get it in standard form """
-    for i in switches:
-        t = H[:,i[0]]
-        H[:,i[0]] = H[:,i[1]]
-        H[:,i[1]] = t
-    return H
-
-def invert_standard_H(H, binary=True):
+def standard_H_to_G(H, ffdim=2, switches = None):
     """ Inverts the standard H matrix to get the Generator Matrix"""
-    pass
+    n = H.shape[1]
+    k = n - H.shape[0]
+    P = H[:,0:k]
+    G = np.hstack((np.eye(k), P.T))
+    print(G)
+    print()
+    if switches: 
+        for i in switches:
+            t = G[:,i[0]].copy()
+            G[:,i[0]] = G[:,i[1]]
+            G[:,i[1]] = t
 
-H = createHMatrix(3, 6, 5, 10)
+    return G
+
+H = createHMatrix(3, 6, 10, 20)
 H_rref = get_reduced_row_echleon_form_H(H)
-print(find_columns_to_change(H_rref, check_standard_form_variance(H_rref)))
-#row_echleon(H.T)
+H, switches = switch_columns(H_rref, check_standard_form_variance(H_rref))
+G = standard_H_to_G(H, switches=switches)
 
 
 
