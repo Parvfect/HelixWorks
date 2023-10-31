@@ -3,14 +3,13 @@
 
 import sympy as sympy 
 import numpy as np
-from Hmatrixbaby import createHMatrix
+from Hmatrixbaby import ParityCheckMatrix
 # Assuming the condition to form a H matrix reduces a row echleon H to standard form
 
 
 def get_reduced_row_echleon_form_H(H, ffdim=2):
     """ Returns the reduced row echleon form of H """
     H_rref = sympy.Matrix(H.T).rref()[0]
-
     # Convert to finite field dimension
     for i in range(H_rref.shape[0]):
         for j in range(H_rref.shape[1]):
@@ -25,7 +24,7 @@ def check_standard_form_variance(H):
     n = H.shape[1]
     k = n - H.shape[0]
     shape = H.shape
-    I_dim = n-k
+    I_dim = n-k 
     I = np.eye(I_dim)
     columns_to_change = {}
     rows = shape[1]
@@ -84,23 +83,9 @@ def standard_H_to_G(H, ffdim=2, switches = None):
 
 
 if __name__ == "__main__":
-    from cProfile import Profile
-    from pstats import Stats
-    import re
-
-    with Profile() as profile:
-        H = createHMatrix(3, 6, 1000, 2000)
-        H_rref = get_reduced_row_echleon_form_H(H)
-        H, switches = switch_columns(H_rref, check_standard_form_variance(H_rref))
-        G = standard_H_to_G(H, switches=switches)
-        
-        (
-            Stats(profile)
-            .strip_dirs()
-            .sort_stats("cumtime")
-            .print_stats(10)
-        )
-    
-
-
+    H = ParityCheckMatrix(3,6,5,10).createHMatrix()
+    H_rref = get_reduced_row_echleon_form_H(H)
+    H_st, switches = switch_columns(H_rref, check_standard_form_variance(H_rref))
+    G = standard_H_to_G(H_st, switches=switches)
+   
 
