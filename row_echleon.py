@@ -84,12 +84,28 @@ def standard_H_to_G(H, ffdim=2, switches = None):
 
     return G
 
+def display_results(dv=3, dc=6, k=5, n=10):
 
-if __name__ == "__main__":
-    H = ParityCheckMatrix(3,6,10,20).createHMatrix()
+    print("dv = {}\n dc = {}\n k = {}\n n = {}".format(dv, dc, k, n))
+    H = ParityCheckMatrix(dv, dc, k, n).createHMatrix()
+    print("Initial Parity Matrix\n")
+    print(H)
+    print()
+
     H_rref = get_reduced_row_echleon_form_H(H)
     H_st, switches = switch_columns(H_rref, check_standard_form_variance(H_rref))
-    G = standard_H_to_G(H_st, switches=switches)
-    
-    print(np.dot(G,(H.T)) % 2)
+    print("Standard Form of H\n")
+    print(H_st)
+    print()
 
+    print("Generator Matrix\n")
+    G = standard_H_to_G(H_st, switches=switches)
+    print(G)
+    print()
+
+    print("G.H^T\n")
+    print(np.dot(G, H.T) % 2)
+
+
+if __name__ == "__main__":
+    display_results()
