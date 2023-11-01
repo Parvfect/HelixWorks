@@ -9,7 +9,7 @@ from Hmatrixbaby import ParityCheckMatrix
 
 def get_reduced_row_echleon_form_H(H, ffdim=2):
     """ Returns the reduced row echleon form of H """
-    H_rref = sympy.Matrix(H.T).rref()[0]
+    H_rref = sympy.Matrix(H).rref()[0]
     # Convert to finite field dimension
     for i in range(H_rref.shape[0]):
         for j in range(H_rref.shape[1]):
@@ -73,6 +73,9 @@ def standard_H_to_G(H, ffdim=2, switches = None):
     k = n - H.shape[0]
     P = H[:,0:k]
     G = np.hstack((np.eye(k), P.T))
+    
+    # Since switches made forward, need to reverse list to undo
+    switches = list(reversed(switches))
     if switches: 
         for i in switches:
             t = G[:,i[0]].copy()
@@ -83,9 +86,10 @@ def standard_H_to_G(H, ffdim=2, switches = None):
 
 
 if __name__ == "__main__":
-    H = ParityCheckMatrix(3,6,5,10).createHMatrix()
+    H = ParityCheckMatrix(3,6,10,20).createHMatrix()
     H_rref = get_reduced_row_echleon_form_H(H)
     H_st, switches = switch_columns(H_rref, check_standard_form_variance(H_rref))
     G = standard_H_to_G(H_st, switches=switches)
-   
+    
+    print(np.dot(G,(H.T)) % 2)
 

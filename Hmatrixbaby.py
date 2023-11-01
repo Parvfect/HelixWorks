@@ -1,6 +1,9 @@
 
 import numpy as np
 import sympy as sympy 
+from pstats import Stats
+import re
+from cProfile import Profile
 
 def len_unique_elements(arr):
     return len(set(arr))
@@ -57,7 +60,7 @@ class ParityCheckMatrix:
         for (i,j) in enumerate(Harr):
             H[i//self.dv, j//self.dc] = 1
 
-        return H
+        return H.T
 
     def get_reduced_row_echleon_form(self, H=None):
         """ Returns the reduced row echleon form of H """
@@ -66,7 +69,7 @@ class ParityCheckMatrix:
             H = self.createHMatrix()
         
         # Get the reduced row echleon form of H
-        H_rref = sympy.Matrix(H.T).rref()[0]
+        H_rref = np.array(sympy.Matrix(H.T).rref()[0])
 
         # Convert to finite field dimension
         for i in range(H_rref.shape[0]):
@@ -74,7 +77,7 @@ class ParityCheckMatrix:
                 H_rref[i,j] = H_rref[i,j] % self.ffdim
         
         # Convert to Integer Matrix
-        return np.array(H_rref).astype(int)
+        return H_rref.astype(int)
     
     def get_standard_form(self, H_rref=None):
         """ Converts H to standard form from reduced row echleon form """
@@ -172,4 +175,27 @@ class ParityCheckMatrix:
 
     def get_G_from_H(self, H):
         """ Create a Generator Matrix for a given H - should it be outside the class ? """
-        return self.get_generator_matrix(self.get_standard_form(self.get_reduced_row_echleon_form(H)))
+        H_rref = self.get_reduced_row_echleon_form(H)
+        H_standard, switches = self.get_standard_form(H)
+        return self.get_generator_matrix(H_standard, switches)
+
+
+def generatorProfiling(dv, dc, k, n):
+    with Profile() as profile:
+        dv, dc, k, n = 3, 6, 100, 200
+        H = ParityCheckMatrix(dv, dc, k, n)
+        H.get_generator_matrix()
+        # Everytime it generates a new one, might be much smarter to have a self method
+        
+        (
+            Stats(profile)
+            .strip_dirs()
+            .sort_stats("cumtime")
+            .print_stats(10)
+        )
+        
+
+        # Don't really need sympy beyond the rref method
+
+if __name__ == "__main__":
+    generatorProfiling(3, 6, 10, 20)
