@@ -166,6 +166,7 @@ class ParityCheckMatrix:
 
         # Performing the column switches to retreive the original G matrix
         if switches: 
+            switches = list(reversed(switches))
             for i in switches:
                 t = G[:,i[0]].copy()
                 G[:,i[0]] = G[:,i[1]]
