@@ -66,7 +66,7 @@ class TannerGraph:
         """ Establishes connections between variable nodes and check nodes """
         
         # In case Harr is sent as a parameter
-        if not Harr:
+        if not (Harr is None):
             self.Harr = ParityCheckMatrix(self.dv, self.dc, self.k, self.n).get_H_arr()
         
         Harr = self.Harr//self.dc

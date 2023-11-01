@@ -4,16 +4,12 @@ from Hmatrixbaby import ParityCheckMatrix
 from bec import generate_input_arr, generate_erasures
 import numpy as np
 
-
-dv, dc, k, n = 3, 6, 500, 1000
-ffield = 2
-
 def get_code_words(input_arr, G, ffield=2):
     """ Converts the input array to Code Words for given Generator Matrix """
     # Ensure the product dimensions are aligned
     return np.dot(input_arr, G) % ffield
 
-def bec_channel_simulation(dv, dc, k, n, ffield=2)
+def bec_channel_simulation(dv, dc, k, n, ffield=2):
     """ Simulates complete Channel Simulation for Binary Erasure Channel including encoding """
     
     # Initialize ParityCheckMatrix class
@@ -44,3 +40,7 @@ def bec_channel_simulation(dv, dc, k, n, ffield=2)
 
 
 
+if __name__ == "__main__":
+    dv, dc, k, n = 3, 6, 50, 100
+    ffield = 2
+    bec_channel_simulation(dv, dc, k, n)

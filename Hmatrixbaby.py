@@ -46,7 +46,7 @@ class ParityCheckMatrix:
     def createHMatrix(self, Harr=None):
         """ Creates the H matrix from the Variable Node Connections of the Tanner Graph """
         
-        if not Harr:
+        if Harr is None:
             # Getting the Variable Node Connections
             Harr = self.get_H_arr()
         
@@ -62,7 +62,7 @@ class ParityCheckMatrix:
     def get_reduced_row_echleon_form(self, H=None):
         """ Returns the reduced row echleon form of H """
 
-        if not H:
+        if H is None:
             H = self.createHMatrix()
         
         # Get the reduced row echleon form of H
@@ -140,7 +140,7 @@ class ParityCheckMatrix:
             return H, switches
 
         # Check if H has been passed as a parameter
-        if not H_rref:
+        if H_rref is None:
             H_rref = self.get_reduced_row_echleon_form()
 
         return switch_columns(H_rref, check_standard_form_variance(H_rref))
