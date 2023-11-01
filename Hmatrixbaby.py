@@ -43,11 +43,13 @@ class ParityCheckMatrix:
         
         return arr
 
-    def createHMatrix(self):
+    def createHMatrix(self, Harr=None):
         """ Creates the H matrix from the Variable Node Connections of the Tanner Graph """
         
-        # Getting the Variable Node Connections
-        Harr = self.get_H_arr()
+        if not Harr:
+            # Getting the Variable Node Connections
+            Harr = self.get_H_arr()
+        
         # Initialize H matrix
         H = np.zeros((self.n, self.n-self.k))
 
@@ -143,7 +145,7 @@ class ParityCheckMatrix:
 
         return switch_columns(H_rref, check_standard_form_variance(H_rref))
 
-    def get_generator_matrix(self, H_standard=None, switches = None):
+    def get_generator_matrix(self, H_standard=None, switches=None):
         """ Inverts the standard H matrix to get the Generator Matrix"""
 
         if H_standard is None:
@@ -168,3 +170,6 @@ class ParityCheckMatrix:
             
         return G
 
+    def get_G_from_H(self, H):
+        """ Create a Generator Matrix for a given H - should it be outside the class ? """
+        return self.get_generator_matrix(self.get_standard_form(self.get_reduced_row_echleon_form(H)))

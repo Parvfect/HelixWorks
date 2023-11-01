@@ -1,6 +1,6 @@
 
 import numpy as np
-from Hmatrixbaby import createHMatrix, getH
+from Hmatrixbaby import ParityCheckMatrix
 from networkx.algorithms import bipartite
 import networkx as nx
 import matplotlib.pyplot as plt
@@ -61,10 +61,14 @@ class TannerGraph:
         self.dc = dc
         self.k = k
         self.n = n
-    
-    def establish_connections(self):
+
+    def establish_connections(self, Harr=None):
         """ Establishes connections between variable nodes and check nodes """
-        self.Harr = getH(self.dv, self.dc, self.k, self.n)
+        
+        # In case Harr is sent as a parameter
+        if not Harr:
+            self.Harr = ParityCheckMatrix(self.dv, self.dc, self.k, self.n).get_H_arr()
+        
         Harr = self.Harr//self.dc
 
         # Divide Harr into dv parts
@@ -159,12 +163,16 @@ class TannerGraph:
         for i in range(len(arr)):
             self.vns[i].value = arr[i]
 
-    def frame_error_rate(self, iterations=50, plot=False, ensemble=True):
+    def frame_error_rate(self, input_arr=None, iterations=50, plot=False, ensemble=False):
         """ Get the FER for the Tanner Graph """
 
         erasure_probabilities = np.arange(0,1,0.05)
         frame_error_rate = []
-        input_arr = np.zeros(self.n)
+        
+        # Creating an all zero vector for input in case no input is passed
+        if not input_arr:
+            input_arr = np.zeros(self.n)
+        
         self.establish_connections()
 
         for i in tqdm(erasure_probabilities):
@@ -174,10 +182,10 @@ class TannerGraph:
                 
                 if ensemble:
                     self.establish_connections()
-                
-                # Assigning values to Variable Nodes after generating erasures in zero array
-                self.assign_values(generate_erasures(input_arr, i))
 
+                    # Assigning values to Variable Nodes after generating erasures in zero array
+                    self.assign_values(generate_erasures(input_arr, i))
+                    
                 # Getting the average error rates for iteration runs
                 if np.all(self.bec_decode() == input_arr):
                     counter += 1    
@@ -196,13 +204,14 @@ class TannerGraph:
         
         if plot:
             plt.plot(erasure_probabilities, frame_error_rate, label = "({},{})".format(self.k, self.n))
-            #plt.title("Frame Error Rate for BEC for {}-{}  {}-{} LDPC Code".format(self.k, self.n, self.dv, self.dc))
-            #plt.ylabel("Frame Error Rate")
-            #plt.xlabel("Erasure Probability")
+            plt.title("Frame Error Rate for BEC for {}-{}  {}-{} LDPC Code".format(self.k, self.n, self.dv, self.dc))
+            plt.ylabel("Frame Error Rate")
+            plt.xlabel("Erasure Probability")
 
             # Displaying final figure
-            #plt.legend()
-            #plt.ylim(0,1)
+            plt.legend()
+            plt.ylim(0,1)
+            plt.show()
 
         return frame_error_rate
 
@@ -210,12 +219,12 @@ class TannerGraph:
 if __name__ == "__main__":
 
     with Profile() as profile:
-        t = TannerGraph(3, 6, 500, 1000)
+        dv, dc, k, n = 3, 6, 1000, 2000
+        t = TannerGraph(dv, dc, k, n)
         t.frame_error_rate(plot=True, ensemble=False)
-        t
         
         # Get the Threshold
-        threshold = threshold_binary_search(self.dv, self.dc)
+        threshold = threshold_binary_search(dv, dc)
         plt.axvline(x=threshold, color='r', linestyle='--', label="Threshold")
 
         
