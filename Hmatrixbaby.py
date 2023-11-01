@@ -56,7 +56,7 @@ class ParityCheckMatrix:
         else:
             self.Harr = Harr
 
-        # Initialize H matrix
+        # Initialize H matrix - the size is wrong will need to fix at some point
         H = np.zeros((self.n, self.n-self.k))
 
         # Fill H matrix where Variable Node is connected to Check Node
@@ -65,7 +65,7 @@ class ParityCheckMatrix:
 
         self.H = H
 
-        return H
+        return H.T
 
     def get_reduced_row_echleon_form(self, H=None):
         """ Returns the reduced row echleon form of H """
@@ -74,7 +74,7 @@ class ParityCheckMatrix:
             self.H = H
         
         # Get the reduced row echleon form of H
-        H_rref = np.array(sympy.Matrix(self.H.T).rref()[0])
+        H_rref = np.array(sympy.Matrix(self.H).rref()[0])
 
         # Convert to finite field dimension
         for i in range(H_rref.shape[0]):

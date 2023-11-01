@@ -4,7 +4,7 @@ from bec import generate_input_arr, generate_erasures
 import numpy as np
 from Hmatrixbaby import ParityCheckMatrix
 import row_echleon as r
-
+import matplotlib.pyplot as plt
 
 def get_code_words(input_arr, G, ffield=2):
     """ Converts the input array to Code Words for given Generator Matrix """
@@ -32,20 +32,25 @@ def bec_channel_simulation(dv, dc, k, n, ffield=2):
     
     G = r.standard_H_to_G(H_st, switches=switches)
 
+    print(np.dot(G, H.T))
+
     # The orientation is proving to be annoying - I don't know what I've done but I need G.H^T = 0 to get it right
 
     # Get the Code words by encoding an input array (here - generated randomly)
     input_arr = generate_input_arr(k)
     C = get_code_words(input_arr, G, ffield).astype(int)
 
-    print(C)
     # Use Tanner Graph to Decode and get Frame Error Rate Curve for the Channel
-    graph.frame_error_rate(input_arr=C, plot=True)
+    graph.frame_error_rate(input_arr=C, plot=True, establish_connections=False, label="Input")
+    graph.frame_error_rate(plot=True, establish_connections=False, label="All zero")
+    plt.legend()
+    plt.title("Comparision of BEC decoder on random input vs all zero input")
+    plt.show()
 
     # Let's try decoding for the simplest case - let's not do fer
 
 
 if __name__ == "__main__":
-    dv, dc, k, n = 3, 6, 5, 10
+    dv, dc, k, n = 3, 6, 50, 100
     ffield = 2
     bec_channel_simulation(dv, dc, k, n)

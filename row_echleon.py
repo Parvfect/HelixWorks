@@ -9,7 +9,7 @@ from Hmatrixbaby import ParityCheckMatrix
 
 def get_reduced_row_echleon_form_H(H, ffdim=2):
     """ Returns the reduced row echleon form of H """
-    H_rref = sympy.Matrix(H.T).rref()[0]
+    H_rref = sympy.Matrix(H).rref()[0]
     # Convert to finite field dimension
     for i in range(H_rref.shape[0]):
         for j in range(H_rref.shape[1]):
@@ -84,7 +84,7 @@ def standard_H_to_G(H, ffdim=2, switches = None):
 
     return G
 
-def display_results(dv=3, dc=6, k=5, n=10):
+def display_results(dv=3, dc=6, k=10, n=20):
 
     print("dv = {}\n dc = {}\n k = {}\n n = {}".format(dv, dc, k, n))
     H = ParityCheckMatrix(dv, dc, k, n).createHMatrix()
@@ -103,8 +103,11 @@ def display_results(dv=3, dc=6, k=5, n=10):
     print(G)
     print()
 
+    # Dimensions of G are wrong 
+    # G.H^T  k,n - n-k, n
+    # H is supposed to be n-k,n!!
     print("G.H^T\n")
-    print(np.dot(G, H) % 2)
+    print(np.dot(G, H.T) % 2)
 
 
 if __name__ == "__main__":

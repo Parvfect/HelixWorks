@@ -163,7 +163,7 @@ class TannerGraph:
         for i in range(len(arr)):
             self.vns[i].value = arr[i]
 
-    def frame_error_rate(self, input_arr=None, iterations=50, plot=False, ensemble=False):
+    def frame_error_rate(self, input_arr=None, iterations=50, plot=False, ensemble=False, establish_connections=True, label=None):
         """ Get the FER for the Tanner Graph """
 
         erasure_probabilities = np.arange(0,1,0.05)
@@ -173,7 +173,8 @@ class TannerGraph:
         if input_arr is None:
             input_arr = np.zeros(self.n)
         
-        self.establish_connections()
+        if establish_connections:
+            self.establish_connections()
 
         for i in tqdm(erasure_probabilities):
             counter = 0
@@ -183,9 +184,9 @@ class TannerGraph:
                 if ensemble:
                     self.establish_connections()
 
-                    # Assigning values to Variable Nodes after generating erasures in zero array
-                    self.assign_values(generate_erasures(input_arr, i))
-                
+                # Assigning values to Variable Nodes after generating erasures in zero array
+                self.assign_values(generate_erasures(input_arr, i))
+
                 # Getting the average error rates for iteration runs
                 if np.all(self.bec_decode() == input_arr):
                     counter += 1    
@@ -203,15 +204,15 @@ class TannerGraph:
             frame_error_rate.append(error_rate)
         
         if plot:
-            plt.plot(erasure_probabilities, frame_error_rate, label = "({},{})".format(self.k, self.n))
-            plt.title("Frame Error Rate for BEC for {}-{}  {}-{} LDPC Code".format(self.k, self.n, self.dv, self.dc))
+            plt.plot(erasure_probabilities, frame_error_rate, label = "({},{}) {}".format(self.k, self.n, label))
+            #plt.title("Frame Error Rate for BEC for {}-{}  {}-{} LDPC Code".format(self.k, self.n, self.dv, self.dc))
             plt.ylabel("Frame Error Rate")
             plt.xlabel("Erasure Probability")
 
             # Displaying final figure
-            plt.legend()
+            #plt.legend()
             plt.ylim(0,1)
-            plt.show()
+            #plt.show()
 
         return frame_error_rate
 
