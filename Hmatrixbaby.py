@@ -42,7 +42,9 @@ class ParityCheckMatrix:
             
             # Break if all check nodes are connected to dv variable nodes
             if flag == 0:
-                break
+                break   
+        
+        self.Harr = arr
         
         return arr
 
@@ -50,34 +52,39 @@ class ParityCheckMatrix:
         """ Creates the H matrix from the Variable Node Connections of the Tanner Graph """
         
         if Harr is None:
-            # Getting the Variable Node Connections
-            Harr = self.get_H_arr()
-        
+            self.Harr = self.get_H_arr()
+        else:
+            self.Harr = Harr
+
         # Initialize H matrix
         H = np.zeros((self.n, self.n-self.k))
 
         # Fill H matrix where Variable Node is connected to Check Node
-        for (i,j) in enumerate(Harr):
+        for (i,j) in enumerate(self.Harr):
             H[i//self.dv, j//self.dc] = 1
 
-        return H.T
+        self.H = H
+
+        return H
 
     def get_reduced_row_echleon_form(self, H=None):
         """ Returns the reduced row echleon form of H """
 
-        if H is None:
-            H = self.createHMatrix()
+        if H:
+            self.H = H
         
         # Get the reduced row echleon form of H
-        H_rref = np.array(sympy.Matrix(H.T).rref()[0])
+        H_rref = np.array(sympy.Matrix(self.H.T).rref()[0])
 
         # Convert to finite field dimension
         for i in range(H_rref.shape[0]):
             for j in range(H_rref.shape[1]):
                 H_rref[i,j] = H_rref[i,j] % self.ffdim
         
-        # Convert to Integer Matrix
-        return H_rref.astype(int)
+        # Convert to Integer Matrix and return
+        self.H_rref = H_rref.astype(int)
+
+        return self.H_rref
     
     def get_standard_form(self, H_rref=None):
         """ Converts H to standard form from reduced row echleon form """
@@ -143,49 +150,52 @@ class ParityCheckMatrix:
             return H, switches
 
         # Check if H has been passed as a parameter
-        if H_rref is None:
-            H_rref = self.get_reduced_row_echleon_form()
+        if H_rref:
+            self.H_rref = H_rref
 
-        return switch_columns(H_rref, check_standard_form_variance(H_rref))
+        self.H_standard, self.switches = switch_columns(self.H_rref, check_standard_form_variance(self.H_rref))
+
+        # Reverse list to get the correct order of undoing switches
+        self.switches = list(reversed(self.switches))
+
+        return self.H_standard, self.switches
 
     def get_generator_matrix(self, H_standard=None, switches=None):
         """ Inverts the standard H matrix to get the Generator Matrix"""
 
-        if H_standard is None:
-            H_standard, switches = self.get_standard_form()
-
-        # Getting the k-n dimensions
-        n = H_standard.shape[1]
-        k = n - H_standard.shape[0]
+        if H_standard:
+            self.H_standard, self.switches = H_standard, switches
 
         # Getting the P matrix
-        P = H_standard[:,0:k]
+        P = self.H_standard[:,0:self.k]
 
         # Getting the standard form of the G matrix
-        G = np.hstack((np.eye(k), P.T))
+        G = np.hstack((np.eye(self.k), P.T))
 
         # Performing the column switches to retreive the original G matrix
-        if switches: 
-            switches = list(reversed(switches))
-            for i in switches:
-                t = G[:,i[0]].copy()
-                G[:,i[0]] = G[:,i[1]]
-                G[:,i[1]] = t
-            
-        return G
+        # Assuming switches is already reversed and in right form
+        for i in self.switches:
+            t = G[:,i[0]].copy()
+            G[:,i[0]] = G[:,i[1]]
+            G[:,i[1]] = t
+        
+        self.G = G
 
-    def get_G_from_H(self, H):
-        """ Create a Generator Matrix for a given H - should it be outside the class ? """
-        H_rref = self.get_reduced_row_echleon_form(H)
-        H_standard, switches = self.get_standard_form(H)
-        return self.get_generator_matrix(H_standard, switches)
+        return self.G
+
+    def pipeline(self):
+        """ Needs better organisation, doing something wrong as a class structure """
+        self.get_H_arr()
+        self.createHMatrix()
+        self.get_reduced_row_echleon_form()
+        self.get_standard_form()
+        print(self.get_generator_matrix())
 
 
 def generatorProfiling(dv, dc, k, n):
     with Profile() as profile:
-        dv, dc, k, n = 3, 6, 100, 200
         H = ParityCheckMatrix(dv, dc, k, n)
-        H.get_generator_matrix()
+        print(H.pipeline())
         # Everytime it generates a new one, might be much smarter to have a self method
         
         (

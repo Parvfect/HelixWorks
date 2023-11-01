@@ -1,8 +1,10 @@
 
 from graph import TannerGraph
-from Hmatrixbaby import ParityCheckMatrix
 from bec import generate_input_arr, generate_erasures
 import numpy as np
+from Hmatrixbaby import ParityCheckMatrix
+import row_echleon as r
+
 
 def get_code_words(input_arr, G, ffield=2):
     """ Converts the input array to Code Words for given Generator Matrix """
@@ -25,22 +27,25 @@ def bec_channel_simulation(dv, dc, k, n, ffield=2):
     # Create Parity Matrix using generated Harr
     H = ParityMatrix.createHMatrix(Harr)
 
-    # Get Generator Matrix for the corresponding Parity Matrix
-    G = ParityMatrix.get_G_from_H(H)
+    H_rref = r.get_reduced_row_echleon_form_H(H)
+    H_st, switches = r.switch_columns(H_rref, r.check_standard_form_variance(H_rref))
+    
+    G = r.standard_H_to_G(H_st, switches=switches)
+
+    # The orientation is proving to be annoying - I don't know what I've done but I need G.H^T = 0 to get it right
 
     # Get the Code words by encoding an input array (here - generated randomly)
-    C = get_code_words(generate_input_arr(k), G, ffield)
+    input_arr = generate_input_arr(k)
+    C = get_code_words(input_arr, G, ffield).astype(int)
 
-    # Simulate Passing Code through Channel
-    C_post_channel = generate_erasures(C, 0.1)
-    
+    print(C)
     # Use Tanner Graph to Decode and get Frame Error Rate Curve for the Channel
-    graph.assign_values(C_post_channel)
-    graph.frame_error_rate(input_arr=C_post_channel, plot=True)
+    graph.frame_error_rate(input_arr=C, plot=True)
 
+    # Let's try decoding for the simplest case - let's not do fer
 
 
 if __name__ == "__main__":
-    dv, dc, k, n = 3, 6, 50, 100
+    dv, dc, k, n = 3, 6, 5, 10
     ffield = 2
     bec_channel_simulation(dv, dc, k, n)

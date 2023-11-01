@@ -170,7 +170,7 @@ class TannerGraph:
         frame_error_rate = []
         
         # Creating an all zero vector for input in case no input is passed
-        if not input_arr:
+        if input_arr is None:
             input_arr = np.zeros(self.n)
         
         self.establish_connections()
@@ -185,7 +185,7 @@ class TannerGraph:
 
                     # Assigning values to Variable Nodes after generating erasures in zero array
                     self.assign_values(generate_erasures(input_arr, i))
-                    
+                
                 # Getting the average error rates for iteration runs
                 if np.all(self.bec_decode() == input_arr):
                     counter += 1    
