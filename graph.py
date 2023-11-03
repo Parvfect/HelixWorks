@@ -19,7 +19,7 @@ class Node:
 
     def __init__(self, no_connections, identifier):
         self.value = 0
-        self.links = np.zeros(no_connections)
+        self.links = np.zeros(no_connections, dtype=int)
         self.identifier = identifier
 
     def add_link(self, node):
@@ -112,7 +112,6 @@ class TannerGraph:
 
         filled_vns = sum([1 for i in self.vns if not np.isnan(i.value)])
         resolved_vns = 0
-        resolved_vns_temp = 0
 
         for iteration in range(max_iterations):
             
@@ -144,11 +143,56 @@ class TannerGraph:
                     self.vns[int(erasure_index)].value = sum_links % 2
                     resolved_vns+=1
             
-            if resolved_vns == resolved_vns_temp or filled_vns+resolved_vns == self.n:
-                break
+            # Check in every iteration - otherwise it will be too slow
+            if filled_vns+resolved_vns == self.n:
+                return np.array([i.value for i in self.vns])
 
-            resolved_vns_temp = resolved_vns
 
+        return np.array([i.value for i in self.vns])
+
+    def belief_propagation(self, max_iterations=100):
+        """ Belief Propagation decoding for the general case (currently only works for BEC) )"""
+
+        filled_vns = sum(list([1 for i in self.vns if not np.isnan(i.value)]))
+        resolved_vns = 0
+        
+        for iteration in range(max_iterations):
+            
+            # Iterating through all the check nodes
+            for i in self.cns:
+
+                # Iterating through all the connected variable nodes for the check node
+                for j in i.links:
+                    
+                    sum_vns = 0
+                    erasure_check = False
+                    
+                    # Iterating through the other variable nodes for the check node to obtain the possible value for the selected variable node
+                    for k in i.links:
+                        if k != j:
+
+                            # For BEC - if any of the connected variable nodes are erased, then the value of the selected variable node is erased
+                            if np.isnan(self.vns[k].value):
+                                erasure_check = True
+                                break
+
+                            # Update the sum of the variable nodes
+                            sum_vns += self.vns[k].value
+                    
+                    # If any of the connected variable nodes are erased, then the value of the selected variable node is erased
+                    if erasure_check:
+                        continue
+                    
+                    # Need a better Resolved VNs check for the general case, will have to be adapted for the Coupon collector
+                    if np.isnan(self.vns[j].value):
+                        resolved_vns += 1    
+                    
+                    self.vns[j].value = sum_vns % 2  # in coupon collector, this is going to be intersection with the set of symbols
+
+                
+                if filled_vns + resolved_vns == self.n:
+                    return np.array([i.value for i in self.vns])
+            
         return np.array([i.value for i in self.vns])
 
     def coupon_collector_decoding(self, max_iterations=100):
@@ -193,9 +237,8 @@ class TannerGraph:
                 # Assigning values to Variable Nodes after generating erasures in zero array
                 self.assign_values(generate_erasures(input_arr, i))
 
-                #print(generate_erasures(input_arr, i))
                 # Getting the average error rates for iteration runs
-                if np.all(self.bec_decode() == input_arr):
+                if np.all(self.belief_propagation() == input_arr):
                     counter += 1    
                 
                 """
@@ -208,13 +251,8 @@ class TannerGraph:
 
             # Calculate Error Rate and append to list
             error_rate = (iterations - counter)/iterations
-            #if error_rate == 1:
-            #   print("Break point")
             frame_error_rate.append(error_rate)
         
-        #if frame_error_rate[-1] == 1:
-            #self.frame_error_rate(input_arr, iterations, plot, ensemble, establish_connections, label)
-
         if plot:
             plt.plot(erasure_probabilities, frame_error_rate, label = "({},{}) {}".format(self.k, self.n, label))
             #plt.title("Frame Error Rate for BEC for {}-{}  {}-{} LDPC Code".format(self.k, self.n, self.dv, self.dc))

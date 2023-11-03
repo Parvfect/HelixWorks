@@ -54,7 +54,7 @@ def basic_encoding_procedure(dv, dc, k, n, ffield=2):
     plt.show()
 
 if __name__ == "__main__":
-    dv, dc, k, n = 3, 6, 100, 200
+    dv, dc, k, n = 3, 6, 10, 20
     ffield = 2
     basic_encoding_procedure(dv, dc, k, n, ffield=ffield)
     
