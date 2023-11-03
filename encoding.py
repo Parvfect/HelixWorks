@@ -27,8 +27,8 @@ def basic_encoding_procedure(dv, dc, k, n, ffield=2):
     # Create Parity Matrix using generated Harr
     H = ParityMatrix.createHMatrix(Harr)
 
-    H_rref = r.get_reduced_row_echleon_form_H(H)
-    H_st, switches = r.switch_columns(H_rref, r.check_standard_form_variance(H_rref))
+    H_rref = ParityMatrix.get_reduced_row_echleon_form_H(H)
+    H_st, switches = ParityMatrix.switch_columns(H_rref, r.check_standard_form_variance(H_rref))
     
     G = r.standard_H_to_G(H_st, switches=switches)
 

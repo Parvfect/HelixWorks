@@ -3,50 +3,34 @@
 import random
 import numpy as np
 from graph import TannerGraph
-from Hmatrixbaby import createHMatrix
+from Hmatrixbaby import ParityCheckMatrix
 from scipy.linalg import null_space
 import sympy as sympy
-
-def get_symbols(motifs, k):
-    """ Implement n choose k and get all the symbols from the motifs """
-
-    n = len(motifs)
-    symbols = []
+from misc_tests import *
 
 
 def coupon_collector_channel(arr, R):
+    return [arr[random.randint(0, len(arr) - 1)] for i in range(R)]
 
-    output_arr = []
-    for i in range(R):
-        output_arr.append(arr[random.randint(0, len(arr) - 1)])
-    return output_arr
-
-def htog():
-    H = createHMatrix(3,6, 10, 20)
-    # Reduce H to row echelon form
-    print(H)
-    H = sympy.Matrix(H, pivots=False, normalize_last=False)
-    print(H.rref())
+# GF(5)
+# dv dc 2 4
+# k n 3 6
 
 
-# 8C4 Model
-n = 8
-k = 4
-#motifs = np.arange(n)
-#symbols = get_symbols(motifs, k)
-#symbol_indices = np.arange(len(symbols))
-# Should we make a dictionary of symbols and indices?
-#t = TannerGraph(3,6, 100, 200)
+# 4C2 symbols - ignoring (2,3) to make it GF(5)
+# Would be also 5: (2,3) which is being ignored
+symbols = {0:(0,1), 1:(0,2), 2:(0,3), 3:(1,2), 4:(1,3)}
 
-# Choice of Symbols - gotta have to think about the pipeline - look at the example for it to make sense
+dv, dc, k, n = 2, 4, 3, 6
 
+input_arr = [0, 1, 0]
 
-htog()
+# Initialize the parity check matrix and tanner graphs
+PM = ParityCheckMatrix(dv, dc, k, n, ffdim=5)
+Harr = PM.get_H_arr()
 
-"""
-for i in range(R):
-    choose_symbols_based_on_H()
-    pass_symbols_through_coupon_collector_channel()
-    decode()
-"""
+graph = TannerGraph(dv, dc, k, n, ffdim=5)
+graph.establish_connections(Harr)
 
+H = PM.createHMatrix(Harr=Harr)
+G = PM.get_generator_matrix()

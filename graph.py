@@ -54,13 +54,14 @@ class VariableNode(Node):
 class TannerGraph:
     """ Initializes empty, on establishing connections creates H and forms links """
 
-    def __init__(self, dv, dc, k, n):
+    def __init__(self, dv, dc, k, n, ffdim=2):
         self.vns = [VariableNode(dv, i) for i in range(n)]
         self.cns = [CheckNode(dc, i) for i in range(n-k)]
         self.dv = dv
         self.dc = dc
         self.k = k
         self.n = n
+        self.ffdim = ffdim
 
     def establish_connections(self, Harr=None):
         """ Establishes connections between variable nodes and check nodes """
