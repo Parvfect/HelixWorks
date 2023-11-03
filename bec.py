@@ -9,5 +9,10 @@ def generate_input_arr(length_arr):
 
 def generate_erasures(input_arr, probability):  
     """ Simulates Binary Erasure Channel by replacing bits with erasures with probability probability"""    
+    
+    #one_erasure = list(input_arr)
+    #one_erasure[0] = np.nan
+    #return one_erasure
+
     return [i if random.random() > probability else np.nan for i in input_arr]
 

@@ -66,8 +66,10 @@ class TannerGraph:
         """ Establishes connections between variable nodes and check nodes """
         
         # In case Harr is sent as a parameter
-        if not (Harr is None):
+        if Harr is None:
             self.Harr = ParityCheckMatrix(self.dv, self.dc, self.k, self.n).get_H_arr()
+        else:
+            self.Harr = np.array(Harr)
         
         Harr = self.Harr//self.dc
 
@@ -111,9 +113,9 @@ class TannerGraph:
         filled_vns = sum([1 for i in self.vns if not np.isnan(i.value)])
         resolved_vns = 0
         resolved_vns_temp = 0
-    
+
         for iteration in range(max_iterations):
-           
+            
             # For each check node  
             for (i,j) in enumerate(self.cns):
                 # See all connection VN values
@@ -130,10 +132,13 @@ class TannerGraph:
                     
                     for k in j.links:
                         # Collect all values in an array
-                        if self.vns[int(k)].value:
+                        if np.isnan(self.vns[int(k)].value):
+                            #sum_links += self.vns[int(k)].value
                             erasure_index = k
                         else:
+                            #erasure_index = k
                             sum_links += self.vns[int(k)].value
+                            
                     
                     # Replace erasure with sum modulo 2
                     self.vns[int(erasure_index)].value = sum_links % 2
@@ -184,9 +189,11 @@ class TannerGraph:
                 if ensemble:
                     self.establish_connections()
 
+
                 # Assigning values to Variable Nodes after generating erasures in zero array
                 self.assign_values(generate_erasures(input_arr, i))
 
+                #print(generate_erasures(input_arr, i))
                 # Getting the average error rates for iteration runs
                 if np.all(self.bec_decode() == input_arr):
                     counter += 1    
@@ -201,8 +208,13 @@ class TannerGraph:
 
             # Calculate Error Rate and append to list
             error_rate = (iterations - counter)/iterations
+            #if error_rate == 1:
+            #   print("Break point")
             frame_error_rate.append(error_rate)
         
+        #if frame_error_rate[-1] == 1:
+            #self.frame_error_rate(input_arr, iterations, plot, ensemble, establish_connections, label)
+
         if plot:
             plt.plot(erasure_probabilities, frame_error_rate, label = "({},{}) {}".format(self.k, self.n, label))
             #plt.title("Frame Error Rate for BEC for {}-{}  {}-{} LDPC Code".format(self.k, self.n, self.dv, self.dc))
@@ -220,7 +232,8 @@ class TannerGraph:
 if __name__ == "__main__":
 
     with Profile() as profile:
-        dv, dc, k, n = 3, 6, 1000, 2000
+        dv, dc, k, n = 3, 6, 1000,
+        2000
         t = TannerGraph(dv, dc, k, n)
         t.frame_error_rate(plot=True, ensemble=False)
         
