@@ -13,6 +13,39 @@ from misc_tests import *
 def coupon_collector_channel(arr, R):
     return [arr[random.randint(0, len(arr) - 1)] for i in range(R)]
 
+def get_possible_symbols(reads, symbol_arr):
+     # Convert to possible symbols
+
+    reads = [set(i) for i in reads]
+    possible_symbols = []
+
+    for i in reads:
+        read_poss = []
+        if tuple(i) in symbol_arr:
+            read_poss.append(symbol_arr.index(tuple(i)))
+            possible_symbols.append(read_poss)
+        else: 
+            # Get closest matches
+            for j in symbol_arr:
+                if list(i)[0] in j:
+                    read_poss.append(symbol_arr.index(j))
+            possible_symbols.append(read_poss)
+    
+    return possible_symbols
+
+def simulate_reads(C, read_length, symbols):
+    """ Simulates the reads from the coupon collector channel """
+    
+    reads = []
+    # Simulate one read
+    for i in C:
+        read = coupon_collector_channel(symbols[i], read_length)
+        reads.append(read)
+
+    # Make reads a set
+    return reads
+   
+
 # GF(5)
 # dv dc 2 4
 # k n 3 6
@@ -43,6 +76,9 @@ PM = ParityCheckMatrix(dv, dc, k, n, ffdim=5)
 Harr = PM.get_H_arr()
 graph = TannerGraph(dv, dc, k, n, ffdim=5)
 graph.establish_connections(Harr)
+print("Harr")
+print(Harr)
+print()
 print("Check Node Connections : \n")
 print(graph.get_connections())
 print()

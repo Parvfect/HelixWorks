@@ -204,11 +204,49 @@ class TannerGraph:
         """ Decodes for the case of symbol possiblities for each variable node 
             utilising Belief Propagation - may be worth doing for BEC as well 
         """
-        # For each variable node, get the set of compability symbols for the linear equation
-        # Repeat over each variable node
-        # For check node update - find intersection of all sets and update the variable nodes
-        # Iterate until convergence
-        pass
+        
+        filled_vns = sum(list([1 for i in self.vns if not np.isnan(i.value)]))
+        resolved_vns = 0
+        
+        for iteration in range(max_iterations):
+            
+            # Iterating through all the check nodes
+            for i in self.cns:
+
+                # Iterating through all the connected variable nodes for the check node
+                for j in i.links:
+                    
+                    sum_vns = 0
+                    erasure_check = False
+                    
+                    # Iterating through the other variable nodes for the check node to obtain the possible value for the selected variable node
+                    for k in i.links:
+                        if k != j:
+
+                            # For BEC - if any of the connected variable nodes are erased, then the value of the selected variable node is erased
+                            if np.isnan(self.vns[k].value):
+                                erasure_check = True
+                                break
+
+                            # Update the sum of the variable nodes
+                            sum_vns += self.vns[k].value
+                    
+                    # If any of the connected variable nodes are erased, then the value of the selected variable node is erased
+                    if erasure_check:
+                        continue
+                    
+                    # Need a better Resolved VNs check for the general case, will have to be adapted for the Coupon collector
+                    if np.isnan(self.vns[j].value):
+                        resolved_vns += 1    
+                    
+                    self.vns[j].value = sum_vns % 2  # in coupon collector, this is going to be intersection with the set of symbols
+
+                
+                if filled_vns + resolved_vns == self.n:
+                    return np.array([i.value for i in self.vns])
+            
+        return np.array([i.value for i in self.vns])
+
 
     def assign_values(self, arr):   
 
