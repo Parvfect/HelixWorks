@@ -217,23 +217,15 @@ class TannerGraph:
                 for j in i.links:
                     
                     sum_vns = 0
-                    erasure_check = False
-                    
+                    possible_values = []
+
                     # Iterating through the other variable nodes for the check node to obtain the possible value for the selected variable node
+                    
+                    # We are going to have a loop VN layers deep for permutations - need a better method for scaling
                     for k in i.links:
                         if k != j:
-
-                            # For BEC - if any of the connected variable nodes are erased, then the value of the selected variable node is erased
-                            if np.isnan(self.vns[k].value):
-                                erasure_check = True
-                                break
-
                             # Update the sum of the variable nodes
                             sum_vns += self.vns[k].value
-                    
-                    # If any of the connected variable nodes are erased, then the value of the selected variable node is erased
-                    if erasure_check:
-                        continue
                     
                     # Need a better Resolved VNs check for the general case, will have to be adapted for the Coupon collector
                     if np.isnan(self.vns[j].value):
