@@ -27,10 +27,12 @@ def basic_encoding_procedure(dv, dc, k, n, ffield=2):
     # Create Parity Matrix using generated Harr
     H = ParityMatrix.createHMatrix(Harr)
 
-    H_rref = ParityMatrix.get_reduced_row_echleon_form_H(H)
-    H_st, switches = ParityMatrix.switch_columns(H_rref, r.check_standard_form_variance(H_rref))
-    
-    G = r.standard_H_to_G(H_st, switches=switches)
+    """
+    H_rref = r.get_reduced_row_echleon_form_H(H)
+    H_st, switches = r.switch_columns(H_rref, r.check_standard_form_variance(H_rref))
+    """
+
+    G = r.parity_to_generator(H)
 
     # Checking if it is a valid generator matrix
     if np.any(np.dot(G, H.T) % 2):
@@ -54,7 +56,7 @@ def basic_encoding_procedure(dv, dc, k, n, ffield=2):
     plt.show()
 
 if __name__ == "__main__":
-    dv, dc, k, n = 3, 6, 10, 20
+    dv, dc, k, n = 3, 6, 50, 100
     ffield = 2
     basic_encoding_procedure(dv, dc, k, n, ffield=ffield)
     

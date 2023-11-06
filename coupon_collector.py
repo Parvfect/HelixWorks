@@ -4,6 +4,7 @@ import random
 import numpy as np
 from graph import TannerGraph
 from Hmatrixbaby import ParityCheckMatrix
+import row_echleon as r
 from scipy.linalg import null_space
 import sympy as sympy
 from misc_tests import *
@@ -28,9 +29,38 @@ input_arr = [0, 1, 0]
 # Initialize the parity check matrix and tanner graphs
 PM = ParityCheckMatrix(dv, dc, k, n, ffdim=5)
 Harr = PM.get_H_arr()
+print("Harr: \n", Harr)
 
 graph = TannerGraph(dv, dc, k, n, ffdim=5)
 graph.establish_connections(Harr)
 
 H = PM.createHMatrix(Harr=Harr)
-G = PM.get_generator_matrix()
+print("H: \n", H)
+G = r.parity_to_generator(H, ffdim=5)
+print("G: \n", G)
+
+print(np.dot(G, H.T) % 5)
+
+if np.any(np.dot(G, H.T) % 5 != 0):
+    print("Matrices are not valid, aborting simulation")
+    exit()
+
+input_arr = [np.random.randint(0,5) for i in range(k)]
+
+print(input_arr)
+C = np.dot(input_arr, G) % 5
+
+if np.any(np.dot(C, H.T) % 5 != 0):
+    print("Codeword is not valid, aborting simulation")
+    exit()
+
+print(C)
+
+read_length = 5
+
+output_motifs = []
+for i in C:
+    print(symbols[i])
+    output_motifs.append(i:coupon_collector(symbols[i], read_length))
+
+print(output_motifs)

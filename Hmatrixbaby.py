@@ -70,7 +70,7 @@ class ParityCheckMatrix:
     def get_reduced_row_echleon_form(self, H=None):
         """ Returns the reduced row echleon form of H """
 
-        if H:
+        if H is not None:
             self.H = H
         
         # Get the reduced row echleon form of H
@@ -160,11 +160,13 @@ class ParityCheckMatrix:
 
         return self.H_standard, self.switches
 
-    def get_generator_matrix(self, H_standard=None, switches=None):
+    def get_generator_matrix(self, H=None):
         """ Inverts the standard H matrix to get the Generator Matrix"""
 
-        if H_standard:
-            self.H_standard, self.switches = H_standard, switches
+        # Check if H has been passed as a parameter
+        if H is not None:
+            self.get_reduced_row_echleon_form(H)
+            self.get_standard_form()
 
         # Getting the P matrix
         P = self.H_standard[:,0:self.k]

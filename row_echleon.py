@@ -16,9 +16,8 @@ def get_reduced_row_echleon_form_H(H, ffdim=2):
     ff = GF(ffdim)
     
     H = DomainMatrix([[ff(H[i,j]) for j in range(H.shape[1])] for i in range(H.shape[0])], H.shape, ff)
-    
+
     H_rref = H.rref()[0]
-    
     return np.array(H_rref.to_Matrix())
 
 def check_standard_form_variance(H):
@@ -74,8 +73,8 @@ def standard_H_to_G(H, ffdim=2, switches = None):
     """ Inverts the standard H matrix to get the Generator Matrix"""
     n = H.shape[1]
     k = n - H.shape[0]
-    P = H[:,0:k]
-    G = np.hstack((np.eye(k), P.T))
+    P = -H[:,0:k]
+    G = np.hstack((np.eye(k), P.T)) % ffdim
     
     # Since switches made forward, need to reverse list to undo
     switches = list(reversed(switches))
@@ -86,6 +85,15 @@ def standard_H_to_G(H, ffdim=2, switches = None):
             G[:,i[1]] = t
 
     return G.astype(int)
+
+
+def parity_to_generator(H, ffdim=2):
+    """ Converts a parity check matrix to a generator matrix """
+    H_rref = get_reduced_row_echleon_form_H(H, ffdim=ffdim)
+    H_st, switches = switch_columns(H_rref, check_standard_form_variance(H_rref))
+    
+    G = standard_H_to_G(H_st, switches=switches, ffdim=ffdim)
+    return G
 
 def display_results(dv=3, dc=6, k=10, n=20):
 
