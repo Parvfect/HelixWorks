@@ -83,6 +83,10 @@ class TannerGraph:
                 self.vns[i].add_link(self.cns[k])
                 self.cns[k].add_link(self.vns[i])
 
+    def get_connections(self):
+        """ Returns the connections in the Tanner Graph """
+        return [(i.identifier, j) for i in self.cns for j in i.links]
+
     def visualise(self):
         """ Visualise Tanner Graph """
         G = nx.Graph()

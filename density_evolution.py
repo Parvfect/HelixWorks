@@ -50,5 +50,3 @@ def threshold_binary_search(dc, dv):
             print("Threshold: ", mid)
             return mid
         
-
-threshold_binary_search(3,6)

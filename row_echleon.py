@@ -44,7 +44,11 @@ def check_standard_form_variance(H):
 
 def switch_columns(H, columns_to_change):
     """ Finds and makes the necessary column switches to convert H to standard form """
- 
+    
+    # If no columns need changing, return
+    if not columns_to_change:
+        return H, None
+
     n = H.shape[1]
     k = n - H.shape[0]
     column_positions = list(columns_to_change.keys())
@@ -64,9 +68,6 @@ def switch_columns(H, columns_to_change):
                 H[:,j] = t
                 break
 
-    if not columns_to_change:
-        print("Cannot convert to Standard Form")
-
     return H, switches
 
 def standard_H_to_G(H, ffdim=2, switches = None):
@@ -75,6 +76,9 @@ def standard_H_to_G(H, ffdim=2, switches = None):
     k = n - H.shape[0]
     P = -H[:,0:k]
     G = np.hstack((np.eye(k), P.T)) % ffdim
+    
+    if switches is None:
+        return G.astype(int)
     
     # Since switches made forward, need to reverse list to undo
     switches = list(reversed(switches))
