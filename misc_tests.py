@@ -1,6 +1,7 @@
 
 import numpy as np
 import time 
+from itertools import combinations
 
 def G_H_test(G, H, ffdim=2):
     """ Checks if the generator matrix and parity check matrix are compatible"""
@@ -57,3 +58,12 @@ def random_picker_tester():
     stoptime = time.time()
     print("Time taken for random method ", stoptime - starttime)
     
+
+def choose_symbols(n_motifs, picks):
+    """ Returns Symbol Dictionary given the motifs and the number of picks """
+
+    symbols = list(combinations(np.arange(n_motifs), picks))
+    return {i:symbols[i] for i in range(len(symbols))}
+
+symbol_dict = choose_symbols(4, 2)
+print(symbol_dict)

@@ -8,7 +8,13 @@ from Hmatrixbaby import ParityCheckMatrix
 import row_echleon as r
 from scipy.linalg import null_space
 import sympy as sympy
+from itertools import combinations
 
+def choose_symbols(n_motifs, picks):
+    """ Returns Symbol Dictionary given the motifs and the number of picks """
+
+    symbols = list(combinations(np.arange(n_motifs), picks))
+    return {i:symbols[i] for i in range(len(symbols))}
 
 def coupon_collector_channel(arr, R):
     return [arr[random.randint(0, len(arr) - 1)] for i in range(R)]
@@ -54,10 +60,14 @@ def simulate_reads(C, read_length, symbols):
 
 # 4C2 symbols - ignoring (2,3) to make it GF(5)
 # Would be also 5: (2,3) which is being ignored
-symbols = {0:(0,1), 1:(0,2), 2:(0,3), 3:(1,2), 4:(1,3)}
-symbols_reverse = {(0,1):0, (0,2):1, (0,3):2, (1,2):3, (1,3):4}
-symbol_arr = [(0,1), (0,2), (0,3), (1,2), (1,3)]
-non_zero_symbol_arr = [1,2,3,4]
+
+symbols = choose_symbols(8, 4)
+
+for i in range(8c4 - closest_prime_number):
+    some_dict.pop( random.choice(some_dict.keys()) ) 
+
+symbols.pop()
+symbol_arr = symbols.values()
 
 dv, dc, k, n, read_length = 3, 6, 100, 200, 6
 
