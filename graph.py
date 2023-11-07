@@ -15,6 +15,25 @@ import re
 # Graph Implementation - similar to Adjacency List
 # Need to speeden up the decoding for the Graphs
 
+def permuter(arr, ffield):
+    """ Assuming input of multi dim array, returns all permutations """
+
+    possibilites = set()
+    #print(arr)
+
+    def helper(arr, sum):
+        
+        if not arr:
+            possibilites.add(-(sum % ffield) % ffield)
+        else:
+            for i in arr[0]:
+                helper(arr[1:], sum + i)
+            return
+        return
+    
+    helper(arr, 0)
+    return possibilites
+
 class Node:
 
     def __init__(self, no_connections, identifier):
@@ -86,6 +105,14 @@ class TannerGraph:
     def get_connections(self):
         """ Returns the connections in the Tanner Graph """
         return [(i.identifier, j) for i in self.cns for j in i.links]
+
+    def get_cn_link_values(self, cn):
+        """ Returns the values of the connected vns for the cn as a dd array"""
+        vals = []
+        for i in cn.links:
+            vals.append(self.vns[i].value)
+
+        return vals
 
     def visualise(self):
         """ Visualise Tanner Graph """
@@ -205,38 +232,34 @@ class TannerGraph:
             utilising Belief Propagation - may be worth doing for BEC as well 
         """
         
-        filled_vns = sum(list([1 for i in self.vns if not np.isnan(i.value)]))
+        unresolved_vns = sum([1 for i in self.vns if len(i.value) > 1 ])
         resolved_vns = 0
         
         for iteration in range(max_iterations):
             
             # Iterating through all the check nodes
             for i in self.cns:
-
-                # Iterating through all the connected variable nodes for the check node
-                for j in i.links:
-                    
-                    sum_vns = 0
-                    possible_values = []
-
-                    # Iterating through the other variable nodes for the check node to obtain the possible value for the selected variable node
-                    
-                    # We are going to have a loop VN layers deep for permutations - need a better method for scaling
-                    for k in i.links:
-                        if k != j:
-                            # Update the sum of the variable nodes
-                            sum_vns += self.vns[k].value
-                    
-                    # Need a better Resolved VNs check for the general case, will have to be adapted for the Coupon collector
-                    if np.isnan(self.vns[j].value):
-                        resolved_vns += 1    
-                    
-                    self.vns[j].value = sum_vns % 2  # in coupon collector, this is going to be intersection with the set of symbols
-
                 
-                if filled_vns + resolved_vns == self.n:
-                    return np.array([i.value for i in self.vns])
+                vn_vals = self.get_cn_link_values(i)
+                
+                for j in i.links:
+                
+                    vals = vn_vals.copy()
+                    current_value = self.vns[j].value
+                    vals.remove(current_value)
+                    
+                    possibilites = permuter(vals, self.ffdim)
+                    new_values = set(current_value).intersection(set(possibilites))
+                    self.vns[j].value = list(new_values)
+                    print(current_value, new_values)
+
+                    if len(current_value) > 1 and len(new_values) == 1:
+                        resolved_vns += 1
             
+                if unresolved_vns ==  resolved_vns:
+                    return np.array([i.value for i in self.vns])
+                
+        
         return np.array([i.value for i in self.vns])
 
 

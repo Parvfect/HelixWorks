@@ -9,6 +9,26 @@ def G_H_test(G, H, ffdim=2):
         print("G and H are not compatible")
         exit()
 
+
+def permuter(arr, ffield):
+    """ Assuming input of multi dim array, returns all permutations """
+
+    possibilites = set()
+
+    def helper(arr, sum):
+        
+        if not arr:
+            possibilites.add(-(sum % ffield) % ffield)
+        else:
+            for i in arr[0]:
+                helper(arr[1:], sum + i)
+            return
+        return
+    
+    helper(arr, 0)
+    return possibilites
+        
+
 def random_picker_tester():
     """ Picks a random element from an array """
 
@@ -38,4 +58,4 @@ def random_picker_tester():
     print("Time taken for random method ", stoptime - starttime)
     
 
-print(random_picker_tester())
+permuter()
