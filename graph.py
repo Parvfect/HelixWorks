@@ -236,7 +236,6 @@ class TannerGraph:
         resolved_vns = 0
         
         for iteration in range(max_iterations):
-            
             # Iterating through all the check nodes
             for i in self.cns:
                 
@@ -258,7 +257,7 @@ class TannerGraph:
                 if unresolved_vns ==  resolved_vns:
                     return np.array([i.value for i in self.vns])
         
-        return np.array([i.value for i in self.vns])
+        return [i.value for i in self.vns]
 
 
     def assign_values(self, arr):   

@@ -9,6 +9,10 @@ import row_echleon as r
 from scipy.linalg import null_space
 import sympy as sympy
 from itertools import combinations
+from pstats import Stats
+import re
+from cProfile import Profile
+from tqdm import tqdm
 
 def choose_symbols(n_motifs, picks):
     """ Returns Symbol Dictionary given the motifs and the number of picks """
@@ -63,13 +67,14 @@ def simulate_reads(C, read_length, symbols):
 
 symbols = choose_symbols(8, 4)
 
-for i in range(8c4 - closest_prime_number):
-    some_dict.pop( random.choice(some_dict.keys()) ) 
+# Hard coding symbols to pop for now
 
-symbols.pop()
-symbol_arr = symbols.values()
+for i in range(3):
+    symbols.pop(len(symbols)-i-1)
+symbol_arr = list(symbols.values())
+symbol_keys = list(symbols.keys())
 
-dv, dc, k, n, read_length = 3, 6, 100, 200, 6
+dv, dc, k, n, read_length = 3, 6, 20, 40, 5
 
 input_arr = [0, 1, 0]
 
@@ -77,7 +82,7 @@ input_arr = [0, 1, 0]
 print()
 print("Simulation Parameters: ")
 print("dv:{} , dc:{} , k:{} , n:{} ".format(dv, dc, k, n))   
-print("4C2 symbols - ignoring (2,3) to make it GF(5)")
+print("8C4 symbols - randomly picking 3 to ignore to make it GF(67)")
 print("Symbols are: ", symbols)
 print("Read Length: ", read_length)
 print("\n")
@@ -109,7 +114,7 @@ if np.any(np.dot(G, H.T) % 5 != 0):
     exit()
 
 # Generate a random input array
-input_arr = [np.random.randint(0,5) for i in range(k)]
+input_arr = [random.choice(symbol_keys) for i in range(k)]
 print("Input Array \n", input_arr)
 print()
 
@@ -124,7 +129,6 @@ if np.any(np.dot(C, H.T) % 5 != 0):
 print("Codeword: \n", C)
 print()
 
-read_length = 5
 
 reads = []
 # Simulate one read
@@ -162,8 +166,67 @@ print()
 graph.assign_values(possible_symbols)
 
 print("Decoded Values are")
-decoded_values = np.array(graph.coupon_collector_decoding().T[0])
-print(decoded_values)
 
-if np.all(decoded_values == C):
-    print("Decoding successful")
+
+with Profile() as profile:
+    decoded_values = graph.coupon_collector_decoding()
+    print(decoded_values)
+
+    # Check if it is a homogenous array - if not then decoding is unsuccessful
+    if sum([len(i) for i in decoded_values]) == len(decoded_values):
+        if np.all(decoded_values == C):
+            print("Decoding successful")
+    else:
+        print("Decoding unsuccessful")
+
+    (
+        Stats(profile)
+        .strip_dirs()
+        .sort_stats("cumtime")
+        .print_stats(10)
+    )
+
+
+# Gotta store H
+# Gotta store G
+
+def frame_error_rate(C, iterations=10):
+    """ Returns the frame error rate curve - for same H, same G, same C"""
+    read_lengths = np.arange(5,10,0.05)
+    frame_error_rate = []
+
+    for i in tqdm(read_lengths):
+        counter = 0
+        for j in range(iterations):
+            
+            # Assigning values to Variable Nodes after generating erasures in zero array
+            self.assign_values(generate_erasures(input_arr, i))
+
+            # Getting the average error rates for iteration runs
+            if np.all(self.belief_propagation() == input_arr):
+                counter += 1    
+            
+            """
+            # Adaptive Iterator
+            if prev_error - ((iterations - counter)/iterations) < 0.001:
+                break
+
+            prev_error = (iterations - counter)/iterations
+            """
+
+        # Calculate Error Rate and append to list
+        error_rate = (iterations - counter)/iterations
+        frame_error_rate.append(error_rate)
+    
+    if plot:
+        plt.plot(erasure_probabilities, frame_error_rate, label = "({},{}) {}".format(self.k, self.n, label))
+        #plt.title("Frame Error Rate for BEC for {}-{}  {}-{} LDPC Code".format(self.k, self.n, self.dv, self.dc))
+        plt.ylabel("Frame Error Rate")
+        plt.xlabel("Erasure Probability")
+
+        # Displaying final figure
+        #plt.legend()
+        plt.ylim(0,1)
+        #plt.show()
+
+    return frame_error_rate
