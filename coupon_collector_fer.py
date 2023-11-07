@@ -13,6 +13,8 @@ from pstats import Stats
 import re
 from cProfile import Profile
 from tqdm import tqdm
+import matplotlib.pyplot as plt
+
 
 def choose_symbols(n_motifs, picks):
     """ Returns Symbol Dictionary given the motifs and the number of picks """
@@ -54,7 +56,13 @@ def simulate_reads(C, read_length, symbols):
 
     # Make reads a set
     return reads
-   
+
+def read_symbols(C, read_length, symbols):
+    symbol_arr = list(symbols.values())
+    reads = simulate_reads(C, read_length, symbols)
+    return get_possible_symbols(reads, symbol_arr)
+
+
 
 # GF(67)
 # dv dc 3 6
@@ -74,7 +82,7 @@ for i in range(3):
 symbol_arr = list(symbols.values())
 symbol_keys = list(symbols.keys())
 
-dv, dc, k, n, read_length = 3, 6, 20, 40, 5
+dv, dc, k, n, read_length = 3, 6, 20, 40, 10
 
 input_arr = [0, 1, 0]
 
@@ -130,32 +138,14 @@ print("Codeword: \n", C)
 print()
 
 
-reads = []
-# Simulate one read
-for i in C:
-    read = coupon_collector_channel(symbols[i], read_length)
-    reads.append(read)
+reads = simulate_reads(C, read_length, symbol_arr)
 
-# Make reads a set
-reads = [set(i) for i in reads]
 print("The Reads are:")
 print(reads)
 print()
 
 # Convert to possible symbols
-possible_symbols = []
-
-for i in reads:
-    read_poss = []
-    if tuple(i) in symbol_arr:
-        read_poss.append(symbol_arr.index(tuple(i)))
-        possible_symbols.append(read_poss)
-    else: 
-        # Get closest matches
-        for j in symbol_arr:
-            if list(i)[0] in j:
-                read_poss.append(symbol_arr.index(j))
-        possible_symbols.append(read_poss)
+possible_symbols = get_possible_symbols(reads, symbol_arr)
 
 print("The Symbol Possibilites based on the reads are:")
 print(possible_symbols)
@@ -166,46 +156,35 @@ print()
 graph.assign_values(possible_symbols)
 
 print("Decoded Values are")
+decoded_values = graph.coupon_collector_decoding()
+print(decoded_values)
 
-
-with Profile() as profile:
-    decoded_values = graph.coupon_collector_decoding()
-    print(decoded_values)
-
-    # Check if it is a homogenous array - if not then decoding is unsuccessful
-    if sum([len(i) for i in decoded_values]) == len(decoded_values):
-        if np.all(decoded_values == C):
-            print("Decoding successful")
-    else:
-        print("Decoding unsuccessful")
-
-    (
-        Stats(profile)
-        .strip_dirs()
-        .sort_stats("cumtime")
-        .print_stats(10)
-    )
-
+# Check if it is a homogenous array - if not then decoding is unsuccessful
+if sum([len(i) for i in decoded_values]) == len(decoded_values):
+    if np.all(np.array(decoded_values).T[0] == C):
+        print("Decoding successful")
+else:
+    print("Decoding unsuccessful")
 
 # Gotta store H
 # Gotta store G
 
-def frame_error_rate(C, iterations=10):
+def frame_error_rate(graph, C, symbols, iterations=10):
     """ Returns the frame error rate curve - for same H, same G, same C"""
-    read_lengths = np.arange(5,10,0.05)
+    read_lengths = np.arange(5, 10)
     frame_error_rate = []
 
     for i in tqdm(read_lengths):
         counter = 0
         for j in range(iterations):
-            
             # Assigning values to Variable Nodes after generating erasures in zero array
-            self.assign_values(generate_erasures(input_arr, i))
-
+            graph.assign_values(simulate_reads(C, i, symbols))
+            decoded_values = graph.coupon_collector_decoding()
             # Getting the average error rates for iteration runs
-            if np.all(self.belief_propagation() == input_arr):
-                counter += 1    
-            
+            if sum([len(i) for i in decoded_values]) == len(decoded_values):
+                print("I enter here")
+                if np.all(np.array(decoded_values).T[0] == C):
+                    counter += 1
             """
             # Adaptive Iterator
             if prev_error - ((iterations - counter)/iterations) < 0.001:
@@ -218,15 +197,17 @@ def frame_error_rate(C, iterations=10):
         error_rate = (iterations - counter)/iterations
         frame_error_rate.append(error_rate)
     
-    if plot:
-        plt.plot(erasure_probabilities, frame_error_rate, label = "({},{}) {}".format(self.k, self.n, label))
-        #plt.title("Frame Error Rate for BEC for {}-{}  {}-{} LDPC Code".format(self.k, self.n, self.dv, self.dc))
-        plt.ylabel("Frame Error Rate")
-        plt.xlabel("Erasure Probability")
+    
+    plt.plot(read_lengths, frame_error_rate)
+    plt.title("Frame Error Rate for CC for {}-{}  {}-{} for 8C4 Symbols".format(k, n, dv, dc))
+    plt.ylabel("Frame Error Rate")
+    plt.xlabel("Read Length")
 
-        # Displaying final figure
-        #plt.legend()
-        plt.ylim(0,1)
-        #plt.show()
+    # Displaying final figure
+    #plt.legend()
+    plt.ylim(0,1)
+    plt.show()
 
     return frame_error_rate
+
+frame_error_rate(graph, C, symbols, iterations=10)
