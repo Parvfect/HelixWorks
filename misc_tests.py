@@ -57,5 +57,3 @@ def random_picker_tester():
     stoptime = time.time()
     print("Time taken for random method ", stoptime - starttime)
     
-
-permuter()

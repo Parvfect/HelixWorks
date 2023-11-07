@@ -251,14 +251,12 @@ class TannerGraph:
                     possibilites = permuter(vals, self.ffdim)
                     new_values = set(current_value).intersection(set(possibilites))
                     self.vns[j].value = list(new_values)
-                    print(current_value, new_values)
-
+                    
                     if len(current_value) > 1 and len(new_values) == 1:
                         resolved_vns += 1
             
                 if unresolved_vns ==  resolved_vns:
                     return np.array([i.value for i in self.vns])
-                
         
         return np.array([i.value for i in self.vns])
 

@@ -7,7 +7,6 @@ from Hmatrixbaby import ParityCheckMatrix
 import row_echleon as r
 from scipy.linalg import null_space
 import sympy as sympy
-from misc_tests import *
 
 
 def coupon_collector_channel(arr, R):
@@ -58,7 +57,7 @@ symbols_reverse = {(0,1):0, (0,2):1, (0,3):2, (1,2):3, (1,3):4}
 symbol_arr = [(0,1), (0,2), (0,3), (1,2), (1,3)]
 non_zero_symbol_arr = [1,2,3,4]
 
-dv, dc, k, n, read_length = 2, 4, 3, 6, 5
+dv, dc, k, n, read_length = 2, 4, 5, 10, 6
 
 input_arr = [0, 1, 0]
 
@@ -149,4 +148,8 @@ print()
 
 # Assigning values to Variable Nodes
 graph.assign_values(possible_symbols)
+
+print("Decoded Values are")
+decoded_values = graph.coupon_collector_decoding().T[0]
+print(decoded_values)
 
