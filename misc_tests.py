@@ -66,20 +66,21 @@ def choose_symbols(n_motifs, picks):
     return {i:symbols[i] for i in range(len(symbols))}
 
 def permuter(arr, ffield):
-    possibilities = set()
-    stack = [(arr, 0)]
 
-    while stack:
-        current_arr, current_sum = stack.pop()
+    # for each vn - grow the set of possibilites and sums
+    # write and complete you dolt
+    print(set(arr[0].tolist()))
+    possibilities = set(arr[0].tolist())
+
+    for i in range(len(arr)):
+        if i == (len(arr) - 1):
+            return possibilities
         
-        if not current_arr:
-            possibilities.add(-(current_sum % ffield) % ffield)
-        else:
-            for i in current_arr[0]:
-                stack.append((current_arr[1:], current_sum + i))
+        for j in arr[i+1]:
+            for k in list(possibilities):
+                # Don't know if it will be too much slower to fix each element in the end
+                possibilities.add(k.append(j))
     
     return possibilities
 
-
-symbol_dict = choose_symbols(4, 2)
-print(symbol_dict)
+print(permuter([np.arange(4) for i in range(6)], 2))

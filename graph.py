@@ -12,6 +12,7 @@ from density_evolution import threshold_binary_search
 from pstats import Stats
 import re
 
+"""
 def permuter(arr, ffield):
     possibilities = set()
     stack = [(arr, 0)]
@@ -26,8 +27,25 @@ def permuter(arr, ffield):
                 stack.append((current_arr[1:], current_sum + i))
     
     return possibilities
-
+"""
     
+def permuter(arr, ffield):
+
+    # for each vn - grow the set of possibilites and sums
+    # write and complete you dolt
+
+    possibilities = set()
+
+    for i in self.vns:
+        if i.identifier == (len(self.vns) - 1):
+            return possibilities:
+        
+        for j in i.links:
+            for k in list(possibilites):
+                # Don't know if it will be too much slower to fix each element in the end
+                possibilites.add(-((k + j) % ffield)%ffield)
+    return possibilities
+
 def permuter(arr, ffield):
     
     #Assuming input of multi dim array, returns all permutations 
@@ -47,7 +65,7 @@ def permuter(arr, ffield):
     
     helper(arr, 0)
     return possibilites
-"""
+
 
 class Node:
 
