@@ -12,11 +12,25 @@ from density_evolution import threshold_binary_search
 from pstats import Stats
 import re
 
-# Graph Implementation - similar to Adjacency List
-# Need to speeden up the decoding for the Graphs
-
 def permuter(arr, ffield):
-    """ Assuming input of multi dim array, returns all permutations """
+    possibilities = set()
+    stack = [(arr, 0)]
+
+    while stack:
+        current_arr, current_sum = stack.pop()
+        
+        if not current_arr:
+            possibilities.add(-(current_sum % ffield) % ffield)
+        else:
+            for i in current_arr[0]:
+                stack.append((current_arr[1:], current_sum + i))
+    
+    return possibilities
+
+    
+def permuter(arr, ffield):
+    
+    #Assuming input of multi dim array, returns all permutations 
 
     possibilites = set()
     #print(arr)
@@ -33,6 +47,7 @@ def permuter(arr, ffield):
     
     helper(arr, 0)
     return possibilites
+"""
 
 class Node:
 

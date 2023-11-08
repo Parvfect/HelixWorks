@@ -147,7 +147,7 @@ np.save("C.npy", C)
 
 def frame_error_rate(graph, C, symbols, iterations=10):
     """ Returns the frame error rate curve - for same H, same G, same C"""
-    read_lengths = np.arange(8, 20)
+    read_lengths = np.arange(6, 20)
     frame_error_rate = []
 
     for i in tqdm(read_lengths):

@@ -65,5 +65,21 @@ def choose_symbols(n_motifs, picks):
     symbols = list(combinations(np.arange(n_motifs), picks))
     return {i:symbols[i] for i in range(len(symbols))}
 
+def permuter(arr, ffield):
+    possibilities = set()
+    stack = [(arr, 0)]
+
+    while stack:
+        current_arr, current_sum = stack.pop()
+        
+        if not current_arr:
+            possibilities.add(-(current_sum % ffield) % ffield)
+        else:
+            for i in current_arr[0]:
+                stack.append((current_arr[1:], current_sum + i))
+    
+    return possibilities
+
+
 symbol_dict = choose_symbols(4, 2)
 print(symbol_dict)
