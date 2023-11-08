@@ -253,8 +253,9 @@ class TannerGraph:
                     
                     if len(current_value) > 1 and len(new_values) == 1:
                         resolved_vns += 1
-            
-                if unresolved_vns ==  resolved_vns:
+
+                decoded_values = [i.value for i in self.vns]
+                if unresolved_vns ==  resolved_vns and sum([len(i) for i in decoded_values]) == len(decoded_values):
                     return np.array([i.value for i in self.vns])
         
         return [i.value for i in self.vns]

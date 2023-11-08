@@ -1,6 +1,8 @@
 
 
 
+
+
 import random
 import numpy as np
 from graph import TannerGraph
@@ -62,122 +64,90 @@ def read_symbols(C, read_length, symbols):
     reads = simulate_reads(C, read_length, symbols)
     return get_possible_symbols(reads, symbol_arr)
 
-
-
 # GF(67)
 # dv dc 3 6
 # k n 50 100
 # 8C4
 
 
-# 4C2 symbols - ignoring (2,3) to make it GF(5)
-# Would be also 5: (2,3) which is being ignored
+n_motifs, n_picks = 8, 4
+dv, dc, k, n, ffdim = 3, 6, 50, 100, 67
 
-symbols = choose_symbols(8, 4)
+symbols = choose_symbols(n_motifs, n_picks)
 
-# Hard coding symbols to pop for now
+symbols.pop(69)
+symbols.pop(68)
+symbols.pop(67)
 
-for i in range(3):
-    symbols.pop(len(symbols)-i-1)
 symbol_arr = list(symbols.values())
 symbol_keys = list(symbols.keys())
 
-dv, dc, k, n, read_length = 3, 6, 20, 40, 7
 
-input_arr = [0, 1, 0]
-
-# Print simulation parameters
-print()
-print("Simulation Parameters: ")
-print("dv:{} , dc:{} , k:{} , n:{} ".format(dv, dc, k, n))   
-print("8C4 symbols - randomly picking 3 to ignore to make it GF(67)")
-print("Symbols are: ", symbols)
-print("Read Length: ", read_length)
-print("\n")
-
-# Initialize the parity check matrix and tanner graphs
-PM = ParityCheckMatrix(dv, dc, k, n, ffdim=5)
+PM = ParityCheckMatrix(dv, dc, k, n, ffdim=ffdim)
 Harr = PM.get_H_arr()
-graph = TannerGraph(dv, dc, k, n, ffdim=5)
+
+graph = TannerGraph(dv, dc, k, n, ffdim=ffdim)
 graph.establish_connections(Harr)
-print("Harr")
-print(Harr)
-print()
-print("Check Node Connections : \n")
-print(graph.get_connections())
-print()
-
 H = PM.createHMatrix(Harr=Harr)
-#H_shuffle = np.array([[random.randint(1,4) if i == 1 else i for i in j] for j in H])
-print("H: \n", H)
-print()
+G = r.parity_to_generator(H, ffdim=ffdim)
 
-G = r.parity_to_generator(H, ffdim=5)
-print("G: \n", G)
-print()
 
-# Check if G and H are valid
-if np.any(np.dot(G, H.T) % 5 != 0):
+if np.any(np.dot(G, H.T) % ffdim != 0):
     print("Matrices are not valid, aborting simulation")
     exit()
 
-# Generate a random input array
 input_arr = [random.choice(symbol_keys) for i in range(k)]
-print("Input Array \n", input_arr)
-print()
 
 # Encode the input array
-C = np.dot(input_arr, G) % 5
+C = np.dot(input_arr, G) % ffdim
 
 # Check if codeword is valid
-if np.any(np.dot(C, H.T) % 5 != 0):
+if np.any(np.dot(C, H.T) % ffdim != 0):
     print("Codeword is not valid, aborting simulation")
     exit()
 
-print("Codeword: \n", C)
-print()
+def run_singular_decoding(read_length):
+    
+    reads = simulate_reads(C, read_length, symbol_arr)
+
+    print("The Reads are:")
+    print(reads)
+    print()
+
+    # Convert to possible symbols
+    
+    possible_symbols = read_symbols(C, read_length, symbols)
+    #possible_symbols = get_possible_symbols(reads, symbol_arr)
+
+    print("The Symbol Possibilites based on the reads are:")
+    print(possible_symbols)
+    print()
+
+    # Assigning values to Variable Nodes
+    graph.assign_values(possible_symbols)
+
+    print("Decoded Values are")
+    decoded_values = graph.coupon_collector_decoding()
+    print(decoded_values)
+
+    # Check if it is a homogenous array - if not then decoding is unsuccessful
+    if sum([len(i) for i in decoded_values]) == len(decoded_values):
+        if np.all(np.array(decoded_values).T[0] == C):
+            print("Decoding successful")
+    else:
+        print("Decoding unsuccessful")
 
 
-"""
-reads = simulate_reads(C, read_length, symbol_arr)
-
-print("The Reads are:")
-print(reads)
-print()
-
-# Convert to possible symbols
-"""
-"""
-possible_symbols = read_symbols(C, read_length, symbols)
-#possible_symbols = get_possible_symbols(reads, symbol_arr)
-
-print("The Symbol Possibilites based on the reads are:")
-print(possible_symbols)
-print()
 
 
-
-# Assigning values to Variable Nodes
-graph.assign_values(possible_symbols)
-
-print("Decoded Values are")
-#decoded_values = graph.coupon_collector_decoding()
-print(decoded_values)
-
-# Check if it is a homogenous array - if not then decoding is unsuccessful
-if sum([len(i) for i in decoded_values]) == len(decoded_values):
-    if np.all(np.array(decoded_values).T[0] == C):
-        print("Decoding successful")
-else:
-    print("Decoding unsuccessful")
-"""
-
-# Gotta store H
-# Gotta store G
+np.save("Harr.npy", Harr)
+np.save("H.npy", H)
+np.save("G.npy", G)
+np.save("C.npy", C)
 
 def frame_error_rate(graph, C, symbols, iterations=10):
     """ Returns the frame error rate curve - for same H, same G, same C"""
-    read_lengths = np.arange(7, 20)
+    read_lengths = np.arange(8, 20)
     frame_error_rate = []
 
     for i in tqdm(read_lengths):
@@ -218,6 +188,8 @@ def frame_error_rate(graph, C, symbols, iterations=10):
 
 
 with Profile() as prof:
+    
+    #run_singular_decoding(4)
     print(frame_error_rate(graph, C, symbols, iterations=1))
 
     (
