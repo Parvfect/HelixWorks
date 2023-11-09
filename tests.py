@@ -3,6 +3,7 @@
 
 
 
+
 import random
 import numpy as np
 from graph import TannerGraph
@@ -64,6 +65,47 @@ def read_symbols(C, read_length, symbols):
     reads = simulate_reads(C, read_length, symbols)
     return get_possible_symbols(reads, symbol_arr)
 
+# GF(67)
+# dv dc 3 6
+# k n 50 100
+# 8C4
+
+
+n_motifs, n_picks = 8, 4
+dv, dc, k, n, ffdim = 3, 6, 10, 100, 67
+
+symbols = choose_symbols(n_motifs, n_picks)
+
+symbols.pop(69)
+symbols.pop(68)
+symbols.pop(67)
+
+symbol_arr = list(symbols.values())
+symbol_keys = list(symbols.keys())
+
+
+PM = ParityCheckMatrix(dv, dc, k, n, ffdim=ffdim)
+Harr = PM.get_H_arr()
+
+graph = TannerGraph(dv, dc, k, n, ffdim=ffdim)
+graph.establish_connections(Harr)
+H = PM.createHMatrix(Harr=Harr)
+G = r.parity_to_generator(H, ffdim=ffdim)
+
+
+if np.any(np.dot(G, H.T) % ffdim != 0):
+    print("Matrices are not valid, aborting simulation")
+    exit()
+
+input_arr = [random.choice(symbol_keys) for i in range(k)]
+
+# Encode the input array
+C = np.dot(input_arr, G) % ffdim
+
+# Check if codeword is valid
+if np.any(np.dot(C, H.T) % ffdim != 0):
+    print("Codeword is not valid, aborting simulation")
+    exit()
 
 def run_singular_decoding(read_length):
     
@@ -97,64 +139,28 @@ def run_singular_decoding(read_length):
         print("Decoding unsuccessful")
 
 
-def get_parameters(n_motifs, n_picks, dv, dc, k, n, ffdim):
-    
-    symbols = choose_symbols(n_motifs, n_picks)
-
-    symbols.pop(69)
-    symbols.pop(68)
-    symbols.pop(67)
-
-    symbol_arr = list(symbols.values())
-    symbol_keys = list(symbols.keys())
 
 
-    PM = ParityCheckMatrix(dv, dc, k, n, ffdim=ffdim)
-    Harr = PM.get_H_arr()
+np.save("Harr.npy", Harr)
+np.save("H.npy", H)
+np.save("G.npy", G)
+np.save("C.npy", C)
 
-    graph = TannerGraph(dv, dc, k, n, ffdim=ffdim)
-    graph.establish_connections(Harr)
-    H = PM.createHMatrix(Harr=Harr)
-    G = r.parity_to_generator(H, ffdim=ffdim)
-
-
-    if np.any(np.dot(G, H.T) % ffdim != 0):
-        print("Matrices are not valid, aborting simulation")
-        exit()
-
-    input_arr = [random.choice(symbol_keys) for i in range(k)]
-
-    # Encode the input array
-    C = np.dot(input_arr, G) % ffdim
-
-    # Check if codeword is valid
-    if np.any(np.dot(C, H.T) % ffdim != 0):
-        print("Codeword is not valid, aborting simulation")
-        exit()
-
-    return graph, C, symbols
-
-
-def frame_error_rate(graph, C, symbols, iterations=10, uncoded=False, bec_decode=False, label=None):
+def frame_error_rate(graph, C, symbols, iterations=10):
     """ Returns the frame error rate curve - for same H, same G, same C"""
-    read_lengths = np.arange(6, 20)
+    read_lengths = np.arange(2, 30)
     frame_error_rate = []
 
     for i in tqdm(read_lengths):
         counter = 0
         for j in range(iterations):
             # Assigning values to Variable Nodes after generating erasures in zero array
-            symbols_read = read_symbols(C, i, symbols)
-            if not uncoded:
-                graph.assign_values(read_symbols(C, i, symbols))
-                if bec_decode:
-                    decoded_values = graph.coupon_collector_erasure_decoder()
-                else:
-                    decoded_values = graph.coupon_collector_decoding()
-            else:
-                decoded_values = symbols_read
+            read_values = read_symbols(C, i, symbols)
+            graph.assign_values(read_values)
+            #decoded_values = graph.coupon_collector_decoding()
+            decoded_values = read_values
+
             # Getting the average error rates for iteration runs
-  
             if sum([len(i) for i in decoded_values]) == len(decoded_values):
                 if np.all(np.array(decoded_values).T[0] == C):
                     counter += 1
@@ -171,61 +177,24 @@ def frame_error_rate(graph, C, symbols, iterations=10, uncoded=False, bec_decode
         frame_error_rate.append(error_rate)
     
     
-    plt.plot(read_lengths, frame_error_rate, 'o')
-    plt.plot(read_lengths, frame_error_rate, label=label)
+    plt.plot(read_lengths, frame_error_rate)
     plt.title("Frame Error Rate for CC for {}-{}  {}-{} for 8C4 Symbols".format(k, n, dv, dc))
     plt.ylabel("Frame Error Rate")
     plt.xlabel("Read Length")
 
     # Displaying final figure
     #plt.legend()
-    plt.xlim(6,20)
     plt.ylim(0,1)
-    #plt.show()
+    plt.show()
 
     return frame_error_rate
 
 
+
 with Profile() as prof:
-    # GF(67)
-    # dv dc 3 6
-    # k n 50 100
-    # 8C4
-
-
-    n_motifs, n_picks = 8, 4
-    dv, dc, k, n, ffdim = 3, 6, 50, 100, 67
+    
     #run_singular_decoding(4)
-    graph, C, symbols = get_parameters(n_motifs, n_picks, dv, dc, k, n, ffdim)
-    
-    print(frame_error_rate(graph, C, symbols, iterations=2000, uncoded=True, label="Uncoded"))
-    
-    """
-    print(frame_error_rate(graph, C, symbols, iterations=100, label="10-20"))
-    print(frame_error_rate(graph, C, symbols, iterations=100, bec_decode=True, label="10-20 bec"))
-    k, n = 50, 100
-    graph, C, symbols = get_parameters(n_motifs, n_picks, dv, dc, k, n, ffdim)
-    print(frame_error_rate(graph, C, symbols, iterations=100, label='50-100'))
-    print(frame_error_rate(graph, C, symbols, iterations=100, bec_decode=True, label='50-100 bec'))
-    k, n = 100, 200
-    graph, C, symbols = get_parameters(n_motifs, n_picks, dv, dc, k, n, ffdim)
-    print(frame_error_rate(graph, C, symbols, iterations=100, label='100-200'))
-    print(frame_error_rate(graph, C, symbols, iterations=100, bec_decode=True, label='100-200 bec'))
-    
-    k, n = 500, 1000
-    graph, C, symbols = get_parameters(n_motifs, n_picks, dv, dc, k, n, ffdim)
-    print(frame_error_rate(graph, C, symbols, iterations=100, label='100-200'))
-    print(frame_error_rate(graph, C, symbols, iterations=100, bec_decode=True, label='100-200 bec'))
-    """    
-
-    #k, n = 250, 500
-    #graph, C, symbols = get_parameters(n_motifs, n_picks, dv, dc, k, n, ffdim)
-    #print(frame_error_rate(graph, C, symbols, iterations=100, label='50-100'))
-
-    plt.xticks(np.arange(6, 20, 1))
-    plt.grid()
-    plt.legend()
-    plt.show()
+    print(frame_error_rate(graph, C, symbols, iterations=1))
 
     (
         Stats(prof)

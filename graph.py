@@ -12,39 +12,22 @@ from density_evolution import threshold_binary_search
 from pstats import Stats
 import re
 
-"""
-def permuter(arr, ffield):
-    possibilities = set()
-    stack = [(arr, 0)]
 
-    while stack:
-        current_arr, current_sum = stack.pop()
-        
-        if not current_arr:
-            possibilities.add(-(current_sum % ffield) % ffield)
-        else:
-            for i in current_arr[0]:
-                stack.append((current_arr[1:], current_sum + i))
+def permuter1(arr, ffield, vn_value):
+
+    possibilities = set(arr[0])
+    new_possibilities = set()
+    for i in range(1, len(arr)):
+        for k in possibilities:
+            for j in arr[i]:
+                new_possibilities.add((j+k) % ffield)
+                if len(new_possibilities) == ffield:
+                    return vn_value
+        possibilities = new_possibilities 
+        new_possibilities = set()
     
-    return possibilities
-"""
-    
-def permuter(arr, ffield):
+    return {(-p)%ffield for p in possibilities}
 
-    # for each vn - grow the set of possibilites and sums
-    # write and complete you dolt
-
-    possibilities = set()
-
-    for i in self.vns:
-        if i.identifier == (len(self.vns) - 1):
-            return possibilities:
-        
-        for j in i.links:
-            for k in list(possibilites):
-                # Don't know if it will be too much slower to fix each element in the end
-                possibilites.add(-((k + j) % ffield)%ffield)
-    return possibilities
 
 def permuter(arr, ffield):
     
@@ -65,7 +48,6 @@ def permuter(arr, ffield):
     
     helper(arr, 0)
     return possibilites
-
 
 class Node:
 
@@ -260,6 +242,60 @@ class TannerGraph:
             
         return np.array([i.value for i in self.vns])
 
+    def coupon_collector_erasure_decoder(self, max_iterations=100):
+        """ Belief Propagation decoding for the general case (currently only works for BEC) )"""
+
+        unresolved_vns = sum([1 for i in self.vns if len(i.value) > 1 ])
+        resolved_vns = 0
+        prev_resolved_vns = 0
+        
+        for iteration in range(max_iterations):
+            
+            # Iterating through all the check nodes
+            for i in self.cns:
+
+                # Iterating through all the connected variable nodes for the check node
+                for j in i.links:
+                    
+                    sum_vns = 0
+                    uncertainty_check = False
+                    
+                    # Iterating through the other variable nodes for the check node to obtain the possible value for the selected variable node
+                    for k in i.links:
+                        if k != j:
+                            
+                            # For BEC - if any of the connected variable nodes are erased, then the value of the selected variable node is erased
+                            if not type(self.vns[k].value) == int:
+                                if len(self.vns[k].value) > 1:
+                                    uncertainty_check = True
+                                    break
+                            if type(self.vns[k].value) == int:
+                                sum_vns += self.vns[k].value    
+                            else:
+                                # Update the sum of the variable nodes
+                                sum_vns += self.vns[k].value[0]
+                    
+                    # If any of the connected variable nodes are erased, then the value of the selected variable node is erased
+                    if uncertainty_check:
+                        continue
+                    
+                    # Need a better Resolved VNs check for the general case, will have to be adapted for the Coupon collector
+                    if len(self.vns[k].value) > 1:
+                        resolved_vns += 1    
+                    
+                    self.vns[j].value = [-sum_vns % self.ffdim]  # in coupon collector, this is going to be intersection with the set of symbols
+
+                
+                if unresolved_vns == resolved_vns:
+                    return np.array([i.value for i in self.vns])
+            
+            if prev_resolved_vns == resolved_vns:
+                    return [i.value for i in self.vns]
+            prev_resolved_vns = resolved_vns
+            
+        return np.array([i.value for i in self.vns])
+
+
     def coupon_collector_decoding(self, max_iterations=100):
         """ Decodes for the case of symbol possiblities for each variable node 
             utilising Belief Propagation - may be worth doing for BEC as well 
@@ -267,6 +303,7 @@ class TannerGraph:
         
         unresolved_vns = sum([1 for i in self.vns if len(i.value) > 1 ])
         resolved_vns = 0
+        prev_resolved_vns = 0
         
         for iteration in range(max_iterations):
             # Iterating through all the check nodes
@@ -280,16 +317,26 @@ class TannerGraph:
                     current_value = self.vns[j].value
                     vals.remove(current_value)
                     
-                    possibilites = permuter(vals, self.ffdim)
+                    #print("okay", permuter(vals, self.ffdim))
+                    #print("Okay",permuter1(vals, self.ffdim))
+                    possibilites = permuter1(vals, self.ffdim, current_value)
                     new_values = set(current_value).intersection(set(possibilites))
                     self.vns[j].value = list(new_values)
                     
                     if len(current_value) > 1 and len(new_values) == 1:
                         resolved_vns += 1
-
+                    
                 decoded_values = [i.value for i in self.vns]
+
+                
                 if unresolved_vns ==  resolved_vns and sum([len(i) for i in decoded_values]) == len(decoded_values):
                     return np.array([i.value for i in self.vns])
+            
+            if prev_resolved_vns == resolved_vns:
+                    return [i.value for i in self.vns]
+            
+            prev_resolved_vns = resolved_vns
+                
         
         return [i.value for i in self.vns]
 
@@ -356,9 +403,8 @@ class TannerGraph:
         return frame_error_rate
 
 
-if __name__ == "__main__":
-
-    with Profile() as profile:
+def test():
+     with Profile() as profile:
         dv, dc, k, n = 3, 6, 1000,
         2000
         t = TannerGraph(dv, dc, k, n)
@@ -376,3 +422,6 @@ if __name__ == "__main__":
             .sort_stats("cumtime")
             .print_stats(10)
         )
+
+if __name__ == "__main__":
+    test_arr = [[0], [3], [2], [0], [3], [2], [2, 4], [2, 4], [0, 1, 2], [0]]

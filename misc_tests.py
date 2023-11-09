@@ -69,18 +69,20 @@ def permuter(arr, ffield):
 
     # for each vn - grow the set of possibilites and sums
     # write and complete you dolt
-    print(set(arr[0].tolist()))
-    possibilities = set(arr[0].tolist())
+    possibilities = set(arr[0])
 
     for i in range(len(arr)):
         if i == (len(arr) - 1):
             return possibilities
-        
+        new_possibilities = set()
         for j in arr[i+1]:
             for k in list(possibilities):
                 # Don't know if it will be too much slower to fix each element in the end
-                possibilities.add(k.append(j))
-    
+                new_possibilities.add(-((k + j) % ffield)%ffield)
+                #possibilities.add(-((k + j)% ffield)%ffield)
+        possibilities = new_possibilities
+
     return possibilities
 
-print(permuter([np.arange(4) for i in range(6)], 2))
+
+print(permuter([np.arange(10) for i in range(10)], 2))
