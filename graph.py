@@ -323,6 +323,10 @@ class TannerGraph:
                     new_values = set(current_value).intersection(set(possibilites))
                     self.vns[j].value = list(new_values)
                     
+                    """
+                    if len(new_values) < len(current_value) and len(possibilites) > 1:
+                        print("I reached here")
+                    """
                     if len(current_value) > 1 and len(new_values) == 1:
                         resolved_vns += 1
                     

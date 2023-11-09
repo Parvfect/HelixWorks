@@ -198,31 +198,38 @@ with Profile() as prof:
     #run_singular_decoding(4)
     graph, C, symbols = get_parameters(n_motifs, n_picks, dv, dc, k, n, ffdim)
     
+    """
     print(frame_error_rate(graph, C, symbols, iterations=2000, uncoded=True, label="Uncoded"))
     
-    """
+    
     print(frame_error_rate(graph, C, symbols, iterations=100, label="10-20"))
     print(frame_error_rate(graph, C, symbols, iterations=100, bec_decode=True, label="10-20 bec"))
     k, n = 50, 100
     graph, C, symbols = get_parameters(n_motifs, n_picks, dv, dc, k, n, ffdim)
     print(frame_error_rate(graph, C, symbols, iterations=100, label='50-100'))
     print(frame_error_rate(graph, C, symbols, iterations=100, bec_decode=True, label='50-100 bec'))
-    k, n = 100, 200
+    """
+
+    k, n = 50, 100
     graph, C, symbols = get_parameters(n_motifs, n_picks, dv, dc, k, n, ffdim)
-    print(frame_error_rate(graph, C, symbols, iterations=100, label='100-200'))
-    print(frame_error_rate(graph, C, symbols, iterations=100, bec_decode=True, label='100-200 bec'))
+    print(frame_error_rate(graph, C, symbols, iterations=100, label='50-100'))
+    print(frame_error_rate(graph, C, symbols, iterations=100, bec_decode=True, label='50-100 bec'))
+
     
+
+    """
     k, n = 500, 1000
     graph, C, symbols = get_parameters(n_motifs, n_picks, dv, dc, k, n, ffdim)
     print(frame_error_rate(graph, C, symbols, iterations=100, label='100-200'))
     print(frame_error_rate(graph, C, symbols, iterations=100, bec_decode=True, label='100-200 bec'))
-    """    
+    """
+    
 
     #k, n = 250, 500
     #graph, C, symbols = get_parameters(n_motifs, n_picks, dv, dc, k, n, ffdim)
     #print(frame_error_rate(graph, C, symbols, iterations=100, label='50-100'))
 
-    plt.xticks(np.arange(6, 20, 1))
+    plt.xticks(np.arange(1, 20, 1))
     plt.grid()
     plt.legend()
     plt.show()
