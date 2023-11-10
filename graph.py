@@ -296,16 +296,16 @@ class TannerGraph:
         return np.array([i.value for i in self.vns])
 
 
-    def coupon_collector_decoding(self, max_iterations=100):
+    def coupon_collector_decoding(self, max_iterations=10000):
         """ Decodes for the case of symbol possiblities for each variable node 
             utilising Belief Propagation - may be worth doing for BEC as well 
         """
         
         unresolved_vns = sum([1 for i in self.vns if len(i.value) > 1 ])
         resolved_vns = 0
-        prev_resolved_vns = 0
+        total_possibilites = 0
         
-        for iteration in range(max_iterations):
+        while True:
             # Iterating through all the check nodes
             for i in self.cns:
                 
@@ -336,8 +336,17 @@ class TannerGraph:
                 if unresolved_vns ==  resolved_vns and sum([len(i) for i in decoded_values]) == len(decoded_values):
                     return np.array([i.value for i in self.vns])
             
-            if prev_resolved_vns == resolved_vns:
-                    return [i.value for i in self.vns]
+
+            # Need to confirm the break condition is right
+            # If we haven't increased certainty of any of the VNs as compared to the previous iteration, we break
+            total_possibilites = sum(len(i.value) for i in self.vns)
+            if sum(len(i.value) for i in self.vns) == total_possibilites:
+                return [i.value for i in self.vns]
+
+            #if prev_resolved_vns == resolved_vns:
+            #       return [i.value for i in self.vns]
+            
+            total_possibilites = sum(len(i.value) for i in self.vns)
             
             prev_resolved_vns = resolved_vns
                 
