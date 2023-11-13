@@ -5,7 +5,7 @@ import uuid
 import os
 import numpy as np
 
-dv, dc, k, n, ffdim = 3, 6, 500, 1000, 67
+dv, dc, k, n, ffdim = 3, 6, 1000, 2000, 67
 PM = ParityCheckMatrix(dv, dc, k, n, ffdim=ffdim)
 Harr = PM.get_H_arr()
 H = PM.createHMatrix(Harr=Harr)

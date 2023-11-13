@@ -1,4 +1,5 @@
 
+
 import numpy as np
 from Hmatrixbaby import ParityCheckMatrix
 from networkx.algorithms import bipartite
@@ -67,9 +68,17 @@ class TannerGraph:
     """ Initializes empty, on establishing connections creates H and forms links """
 
     def __init__(self, dv, dc, k, n, ffdim=2):
+        
+        # Check if connections are non-uniform
+        if type(dv) == list:
+            assert len(dv) == n and len(dc) == n-k
+            self.vns = [VariableNode(dv[i], i) for i in range(n)]
+            self.cns = [CheckNode(dc[i], i) for i in range(n-k)]
 
         self.vns = [VariableNode(dv, i) for i in range(n)]
         self.cns = [CheckNode(dc, i) for i in range(n-k)]
+
+        # For the singular case - it remains as an integer, but for the Changing Case it goes to a list, need to make sure that does not break everything
         self.dv = dv
         self.dc = dc
         self.k = k
