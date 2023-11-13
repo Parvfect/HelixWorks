@@ -138,16 +138,12 @@ print("Codeword: \n", C)
 print()
 
 
-"""
 reads = simulate_reads(C, read_length, symbol_arr)
 
 print("The Reads are:")
 print(reads)
 print()
 
-# Convert to possible symbols
-"""
-"""
 possible_symbols = read_symbols(C, read_length, symbols)
 #possible_symbols = get_possible_symbols(reads, symbol_arr)
 
