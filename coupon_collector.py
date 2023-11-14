@@ -27,26 +27,54 @@ def choose_symbols(n_motifs, picks):
 def coupon_collector_channel(arr, R):
     return [arr[random.randint(0, len(arr) - 1)] for i in range(R)]
 
+
+def get_possible_symbols(reads, symbol_arr):
+    
+    reads = [set(i) for i in reads]
+    
+    for i in reads:
+        print(i)
+        symbols = list(combinations(i, 4))
+        print(symbols)
+
+
+"""
 def get_possible_symbols(reads, symbol_arr):
      # Convert to possible symbols
 
     reads = [set(i) for i in reads]
+    
+    for i in reads:
+        motifs_encountered = reads(i)
+        # Get all combinations of motifs encountered
+        
+    motifs_encountered = set()
+    # Motifs that have not been encountered
+    # Remaining motifs
+    # All compatible motif
+    # Translate to the Symbols - the indices of the symbols
     possible_symbols = []
+
+    print(reads)
 
     for i in reads:
         read_poss = []
         if tuple(i) in symbol_arr:
+            print("I reached here")
             read_poss.append(symbol_arr.index(tuple(i)))
             possible_symbols.append(read_poss)
         else: 
             # Get closest matches
+            # Get all possibilites that are compatible with the read 
+            # The More reads we have the easier to generate all the possibilites
             for j in symbol_arr:
                 if list(i)[0] in j:
                     read_poss.append(symbol_arr.index(j))
             possible_symbols.append(read_poss)
     
     return possible_symbols
-
+"""
+    
 def simulate_reads(C, read_length, symbols):
     """ Simulates the reads from the coupon collector channel """
     
@@ -193,7 +221,7 @@ with Profile() as prof:
 
 
     n_motifs, n_picks = 8, 4
-    dv, dc, k, n, ffdim = 3, 6, 100, 200, 67
+    dv, dc, k, n, ffdim = 3, 6, 10, 20, 67
     #run_singular_decoding(4)
     graph, C, symbols = get_parameters(n_motifs, n_picks, dv, dc, k, n, ffdim)
     
