@@ -1,13 +1,53 @@
 
-# Lovely will need to write my own method
-
 import sympy as sympy 
 from sympy import GF
 from sympy.polys.matrices import DomainMatrix
 import numpy as np
 from Hmatrixbaby import ParityCheckMatrix
-# Assuming the condition to form a H matrix reduces a row echleon H to standard form
 
+def len_unique_elements(arr):
+    return len(set(arr))
+
+def get_H_arr(dc, dv, k, n):
+    """ Gets Tanner Graph Connections for each Variable Node """
+
+    # Initialize an array of size dv*n and fill it with numbers for each variable node's connections
+    arr = np.arange(0, dv*n)
+    flag = 0
+
+    while True:
+        flag = 0
+
+        # Generate a random permutation of the array
+        arr = np.random.permutation(arr)
+
+        # Checking if each check node is connected to dv variable nodes
+        t = [arr[i:i+dv] for i in range(0, len(arr), dv)]
+        for i in t:
+            i = i//dc
+            if len_unique_elements(i) != dv:
+                flag +=1
+        
+        # Break if all check nodes are connected to dv variable nodes
+        if flag == 0:
+            break   
+
+    return arr
+
+def get_H_Matrix(dc, dv, k, n, Harr=None):
+    """ Creates the H matrix from the Variable Node Connections of the Tanner Graph """
+    
+    if Harr is None:
+        Harr = get_H_arr(dc, dv, k, n)
+
+    # Initialize H matrix - the size is wrong will need to fix at some point
+    H = np.zeros((n, n-k))
+
+    # Fill H matrix where Variable Node is connected to Check Node
+    for (i,j) in enumerate(Harr):
+        H[i//dv, j//dc] = 1
+
+    return H.T
 
 def get_reduced_row_echleon_form_H(H, ffdim=2):
     """ Returns the reduced row echleon form of H """
@@ -95,42 +135,7 @@ def parity_to_generator(H, ffdim=2):
     """ Converts a parity check matrix to a generator matrix """
     H_rref = get_reduced_row_echleon_form_H(H, ffdim=ffdim)
     H_st, switches = switch_columns(H_rref, check_standard_form_variance(H_rref))
-    
     G = standard_H_to_G(H_st, switches=switches, ffdim=ffdim)
+    
     return G
 
-def display_results(dv=3, dc=6, k=10, n=20):
-
-    print("dv = {}\n dc = {}\n k = {}\n n = {}".format(dv, dc, k, n))
-    H = ParityCheckMatrix(dv, dc, k, n).createHMatrix()
-    print("Initial Parity Matrix\n")
-    print(H)
-    print()
-
-    H_rref = get_reduced_row_echleon_form_H(H)
-    H_st, switches = switch_columns(H_rref, check_standard_form_variance(H_rref))
-    print("Standard Form of H\n")
-    print(H_st)
-    print()
-
-    print("Generator Matrix\n")
-    G = standard_H_to_G(H_st, switches=switches)
-    print(G)
-    print()
-
-    # Dimensions of G are wrong 
-    # G.H^T  k,n - n-k, n
-    # H is supposed to be n-k,n!!
-    print("G.H^T\n")
-    print(np.dot(G, H.T) % 2)
-
-
-if __name__ == "__main__":
-    #display_results()
-    H = np.array([[1, 1, 0, 1, 1, 0, 0], [1, 0, 1, 1, 0, 1, 0], [0, 1, 1, 1, 0, 0, 1]])
-    print(H)
-    print()
-    rref_form, pivots = get_reduced_row_echleon_form_H(H)
-    print(rref_form)
-    print()
-    print(pivots)
