@@ -1,8 +1,4 @@
 
-
-
-
-
 import random
 import numpy as np
 from graph import TannerGraph
@@ -218,7 +214,7 @@ def frame_error_rate(graph, C, symbols, motifs, n_picks, iterations=10, uncoded=
 
     # Displaying final figure
     #plt.legend()
-    plt.xlim(1,20)
+    plt.xlim(1,19)
     plt.ylim(0,1)
     #plt.show()
 
@@ -234,7 +230,7 @@ if __name__ == "__main__":
 
 
         n_motifs, n_picks = 8, 4
-        dv, dc, k, n, ffdim = 3, 6, 100, 200, 67
+        dv, dc, k, n, ffdim = 3, 9, 100, 150, 67
         read_length = 6
         #run_singular_decoding(4)
         graph, C, symbols, motifs = get_parameters(n_motifs, n_picks, dv, dc, k, n, ffdim)
@@ -243,10 +239,10 @@ if __name__ == "__main__":
 
         
         
-        print(frame_error_rate(graph, C, symbols, motifs, n_picks, iterations=100, label='100-200'))
-        print(frame_error_rate(graph, C, symbols, motifs, n_picks, iterations=100, bec_decode=True, label='100-200 bec'))
-        print(frame_error_rate(graph, C, symbols, motifs, n_picks, iterations=100, uncoded=True, label='100-200 uncoded'))
-        plt.xticks(np.arange(1, 20, 1))
+        print(frame_error_rate(graph, C, symbols, motifs, n_picks, iterations=100, label='CC Decoder'))
+        print(frame_error_rate(graph, C, symbols, motifs, n_picks, iterations=100, bec_decode=True, label='BEC Decoder'))
+        print(frame_error_rate(graph, C, symbols, motifs, n_picks, iterations=100, uncoded=True, label='Uncoded'))
+        plt.xticks(np.arange(1, 19, 1))
         plt.grid()
         plt.legend()
         plt.show()

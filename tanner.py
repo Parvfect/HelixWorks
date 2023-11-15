@@ -74,9 +74,13 @@ class TannerGraph:
             assert len(dv) == n and len(dc) == n-k
             self.vns = [VariableNode(dv[i], i) for i in range(n)]
             self.cns = [CheckNode(dc[i], i) for i in range(n-k)]
-
-        self.vns = [VariableNode(dv, i) for i in range(n)]
-        self.cns = [CheckNode(dc, i) for i in range(n-k)]
+            self.dv = dv
+            self.dc = dc
+        else:
+            self.vns = [VariableNode(dv, i) for i in range(n)]
+            self.cns = [CheckNode(dc, i) for i in range(n-k)]
+            self.dv = [dv for i in range(n)]
+            self.dc = [dc for i in range(n-k)]
 
         # For the singular case - it remains as an integer, but for the Changing Case it goes to a list, need to make sure that does not break everything
         self.dv = dv
@@ -96,9 +100,10 @@ class TannerGraph:
         
         Harr = self.Harr//self.dc
 
-        # Divide Harr into dv parts
-        Harr = [Harr[i:i+self.dv] for i in range(0, len(Harr), self.dv)]
-
+        # Divide Harr into dv parts  
+        # But dv is a list in the case of the changing case
+        self.Harr = [Harr[i:i+self.dv[i]] for i in range(0, len(Harr), self.dv[i])]
+        
         # Establish connections
         for (i,j) in enumerate(Harr):
             for k in j:
