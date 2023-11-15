@@ -21,60 +21,45 @@ import matplotlib.pyplot as plt
 def choose_symbols(n_motifs, picks):
     """ Returns Symbol Dictionary given the motifs and the number of picks """
 
-    symbols = list(combinations(np.arange(n_motifs), picks))
-    return {i:symbols[i] for i in range(len(symbols))}
+    # Reference Motif Address starts from 1 not 0
+    return [set(i) for i in (combinations(np.arange(1, n_motifs+1), picks))]
 
 def coupon_collector_channel(arr, R):
     return [arr[random.randint(0, len(arr) - 1)] for i in range(R)]
 
 
-def get_possible_symbols(reads, symbol_arr):
+def get_possible_symbols(reads, symbols, motifs, n_picks):
     
     reads = [set(i) for i in reads]
     
     for i in reads:
-        print(i)
-        symbols = list(combinations(i, 4))
-        print(symbols)
 
-
-"""
-def get_possible_symbols(reads, symbol_arr):
-     # Convert to possible symbols
-
-    reads = [set(i) for i in reads]
-    
-    for i in reads:
-        motifs_encountered = reads(i)
-        # Get all combinations of motifs encountered
+        # Will only work for the Coupon Collector Channel
+        motifs_encountered = i
+        print("The motifs encountered are {}".format(i))
         
-    motifs_encountered = set()
-    # Motifs that have not been encountered
-    # Remaining motifs
-    # All compatible motif
-    # Translate to the Symbols - the indices of the symbols
-    possible_symbols = []
+        motifs_not_encountered = set(motifs) - set(motifs_encountered)
+        print("The motifs not encountered are {}".format(motifs_not_encountered))
+        
+        if len(motifs_encountered) == n_picks:
+            symbol_possibilities = symbols.index(motifs_encountered)
+        
+        else:
+            
+            # The symbol possibilites are the motifs that are encountered in combination with the motifs that are not encountered
 
-    print(reads)
+            remaining_motif_combinations = list(combinations(motifs_not_encountered, n_picks - len(motifs_encountered)))
+            print("The Remaining Motif Combinations are {}".format(remaining_motif_combinations))
 
-    for i in reads:
-        read_poss = []
-        if tuple(i) in symbol_arr:
-            print("I reached here")
-            read_poss.append(symbol_arr.index(tuple(i)))
-            possible_symbols.append(read_poss)
-        else: 
-            # Get closest matches
-            # Get all possibilites that are compatible with the read 
-            # The More reads we have the easier to generate all the possibilites
-            for j in symbol_arr:
-                if list(i)[0] in j:
-                    read_poss.append(symbol_arr.index(j))
-            possible_symbols.append(read_poss)
-    
-    return possible_symbols
-"""
-    
+            combination_possibilites = []
+            for i in remaining_motif_combinations:
+                combination_possibilites.append(motifs_encountered.add(i))
+            print("The Combination Possibilites are {}".format(combination_possibilites))
+
+            symbol_possibilities = [symbols.index(i) for i in combination_possibilites if i in symbols]
+
+        print("The Symbol Possibilites are {}".format(symbol_possibilities))
+ 
 def simulate_reads(C, read_length, symbols):
     """ Simulates the reads from the coupon collector channel """
     
@@ -87,15 +72,75 @@ def simulate_reads(C, read_length, symbols):
     # Make reads a set
     return reads
 
-def read_symbols(C, read_length, symbols):
-    symbol_arr = list(symbols.values())
+def read_symbols(C, read_length, symbols, motifs, picks):
     reads = simulate_reads(C, read_length, symbols)
-    return get_possible_symbols(reads, symbol_arr)
+    return get_possible_symbols(reads, symbols, motifs, picks)
 
 
-def run_singular_decoding(read_length):
+def display_parameters(n_motifs, n_picks, dv, dc, k, n, motifs, symbols, Harr, H, G, C):
+
+    print("The number of motifs are {}".format(n_motifs))
+    print("The number of picks are {}".format(n_picks))
+    print("The dv is {}".format(dv))
+    print("The dc is {}".format(dc))
+    print("The k is {}".format(k))
+    print("The n is {}".format(n))
+    print("GF{}".format(ffdim))
+    print("The Motifs are \n{}\n".format(motifs))
+    print("The Symbols are \n{}\n".format(symbols))
+    print("The Harr is \n{}\n".format(Harr))
+    print("The Parity Matrice is \n{}\n".format(H))
+    print("The Generator Matrix is \n{}\n".format(G))
+    print("The Codeword is \n{}\n".format(C))
+    return
+
+def get_parameters(n_motifs, n_picks, dv, dc, k, n, ffdim, display=True):
+    """ Returns the parameters for the simulation """
+
+    # Starting adresses from 1
+    motifs = np.arange(1, n_motifs+1)
     
-    reads = simulate_reads(C, read_length, symbol_arr)
+    symbols = choose_symbols(n_motifs, n_picks)
+    
+    symbols.pop(-1)
+    symbols.pop(-2)
+    symbols.pop(-3)
+    
+    symbol_keys = np.arange(0, ffdim)
+
+    Harr = r.get_H_arr(dc, dv, k, n)
+
+    graph = TannerGraph(dv, dc, k, n, ffdim=ffdim)
+    graph.establish_connections(Harr)
+
+    H = r.get_H_Matrix(dc, dv, k, n, Harr)
+
+    G = r.parity_to_generator(H, ffdim=ffdim)
+
+
+    if np.any(np.dot(G, H.T) % ffdim != 0):
+        print("Matrices are not valid, aborting simulation")
+        exit()
+
+    input_arr = [random.choice(symbol_keys) for i in range(k)]
+
+    # Encode the input array
+    C = np.dot(input_arr, G) % ffdim
+
+    # Check if codeword is valid
+    if np.any(np.dot(C, H.T) % ffdim != 0):
+        print("Codeword is not valid, aborting simulation")
+        exit()
+
+    if display:
+        display_parameters(n_motifs, n_picks, dv, dc, k, n, motifs, symbols, Harr, H, G, C)
+
+    return graph, C, symbols, motifs
+
+
+def run_singular_decoding(graph, C, read_length, symbols, motifs, n_picks):
+    
+    reads = simulate_reads(C, read_length, symbols)
 
     print("The Reads are:")
     print(reads)
@@ -103,7 +148,7 @@ def run_singular_decoding(read_length):
 
     # Convert to possible symbols
     
-    possible_symbols = read_symbols(C, read_length, symbols)
+    possible_symbols = read_symbols(C, read_length, symbols, motifs, n_picks)
     #possible_symbols = get_possible_symbols(reads, symbol_arr)
 
     print("The Symbol Possibilites based on the reads are:")
@@ -123,43 +168,6 @@ def run_singular_decoding(read_length):
             print("Decoding successful")
     else:
         print("Decoding unsuccessful")
-
-
-def get_parameters(n_motifs, n_picks, dv, dc, k, n, ffdim):
-    
-    symbols = choose_symbols(n_motifs, n_picks)
-
-    symbols.pop(69)
-    symbols.pop(68)
-    symbols.pop(67)
-
-    symbol_arr = list(symbols.values())
-    symbol_keys = list(symbols.keys())
-
-
-    Harr = r.get_H_arr(dc, dv, k, n)
-
-    graph = TannerGraph(dv, dc, k, n, ffdim=ffdim)
-    graph.establish_connections(Harr)
-    H = r.get_H_Matrix(dc, dv, k, n, Harr)
-    G = r.parity_to_generator(H, ffdim=ffdim)
-
-
-    if np.any(np.dot(G, H.T) % ffdim != 0):
-        print("Matrices are not valid, aborting simulation")
-        exit()
-
-    input_arr = [random.choice(symbol_keys) for i in range(k)]
-
-    # Encode the input array
-    C = np.dot(input_arr, G) % ffdim
-
-    # Check if codeword is valid
-    if np.any(np.dot(C, H.T) % ffdim != 0):
-        print("Codeword is not valid, aborting simulation")
-        exit()
-
-    return graph, C, symbols
 
 
 def frame_error_rate(graph, C, symbols, iterations=10, uncoded=False, bec_decode=False, label=None):
@@ -222,9 +230,13 @@ with Profile() as prof:
 
     n_motifs, n_picks = 8, 4
     dv, dc, k, n, ffdim = 3, 6, 10, 20, 67
+    read_length = 6
     #run_singular_decoding(4)
-    graph, C, symbols = get_parameters(n_motifs, n_picks, dv, dc, k, n, ffdim)
+    graph, C, symbols, motifs = get_parameters(n_motifs, n_picks, dv, dc, k, n, ffdim)
+    run_singular_decoding(graph, C, read_length, symbols, motifs, n_picks)
     
+
+    """
     
     
     graph, C, symbols = get_parameters(n_motifs, n_picks, dv, dc, k, n, ffdim)
@@ -234,12 +246,10 @@ with Profile() as prof:
 
     
 
-    """
     k, n = 500, 1000
     graph, C, symbols = get_parameters(n_motifs, n_picks, dv, dc, k, n, ffdim)
     print(frame_error_rate(graph, C, symbols, iterations=100, label='100-200'))
     print(frame_error_rate(graph, C, symbols, iterations=100, bec_decode=True, label='100-200 bec'))
-    """
     
 
     #k, n = 250, 500
@@ -260,3 +270,4 @@ with Profile() as prof:
 
 
 # Let us store H and G for a 100 - 200 code and get a figure for that - after optimizing iterations
+"""
