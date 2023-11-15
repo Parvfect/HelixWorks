@@ -22,43 +22,47 @@ def choose_symbols(n_motifs, picks):
     """ Returns Symbol Dictionary given the motifs and the number of picks """
 
     # Reference Motif Address starts from 1 not 0
-    return [set(i) for i in (combinations(np.arange(1, n_motifs+1), picks))]
+    return [list(i) for i in (combinations(np.arange(1, n_motifs+1), picks))]
 
 def coupon_collector_channel(arr, R):
     return [arr[random.randint(0, len(arr) - 1)] for i in range(R)]
 
+def get_symbol_index(symbols, symbol):
+
+    for i in symbols:
+        if set(i) == set(symbol):
+            return symbols.index(i)
 
 def get_possible_symbols(reads, symbols, motifs, n_picks):
     
     reads = [set(i) for i in reads]
-    
+    symbol_possibilities = []
     for i in reads:
 
         # Will only work for the Coupon Collector Channel
         motifs_encountered = i
-        print("The motifs encountered are {}".format(i))
-        
         motifs_not_encountered = set(motifs) - set(motifs_encountered)
-        print("The motifs not encountered are {}".format(motifs_not_encountered))
         
+        read_symbol_possibilities = []
+
         if len(motifs_encountered) == n_picks:
-            symbol_possibilities = symbols.index(motifs_encountered)
+            read_symbol_possibilities = [get_symbol_index(symbols, motifs_encountered)]
         
         else:
             
             # The symbol possibilites are the motifs that are encountered in combination with the motifs that are not encountered
 
-            remaining_motif_combinations = list(combinations(motifs_not_encountered, n_picks - len(motifs_encountered)))
-            print("The Remaining Motif Combinations are {}".format(remaining_motif_combinations))
-
-            combination_possibilites = []
+            remaining_motif_combinations = [set(i) for i in combinations(motifs_not_encountered, n_picks - len(motifs_encountered))]
+            
             for i in remaining_motif_combinations:
-                combination_possibilites.append(motifs_encountered.add(i))
-            print("The Combination Possibilites are {}".format(combination_possibilites))
-
-            symbol_possibilities = [symbols.index(i) for i in combination_possibilites if i in symbols]
-
-        print("The Symbol Possibilites are {}".format(symbol_possibilities))
+                possibe_motifs = motifs_encountered.union(i)
+                symbols = [set(i) for i in symbols]
+                if possibe_motifs in symbols:
+                    read_symbol_possibilities.append(get_symbol_index(symbols, motifs_encountered.union(i)))
+        
+        symbol_possibilities.append(read_symbol_possibilities)
+    
+    return symbol_possibilities
  
 def simulate_reads(C, read_length, symbols):
     """ Simulates the reads from the coupon collector channel """
@@ -170,18 +174,18 @@ def run_singular_decoding(graph, C, read_length, symbols, motifs, n_picks):
         print("Decoding unsuccessful")
 
 
-def frame_error_rate(graph, C, symbols, iterations=10, uncoded=False, bec_decode=False, label=None):
+def frame_error_rate(graph, C, symbols, motifs, n_picks, iterations=10, uncoded=False, bec_decode=False, label=None):
     """ Returns the frame error rate curve - for same H, same G, same C"""
-    read_lengths = np.arange(6, 20)
+    read_lengths = np.arange(1, 20)
     frame_error_rate = []
 
     for i in tqdm(read_lengths):
         counter = 0
         for j in range(iterations):
             # Assigning values to Variable Nodes after generating erasures in zero array
-            symbols_read = read_symbols(C, i, symbols)
+            symbols_read = read_symbols(C, i, symbols, motifs, n_picks)
             if not uncoded:
-                graph.assign_values(read_symbols(C, i, symbols))
+                graph.assign_values(read_symbols(C, i, symbols, motifs, n_picks))
                 if bec_decode:
                     decoded_values = graph.coupon_collector_erasure_decoder()
                 else:
@@ -214,52 +218,57 @@ def frame_error_rate(graph, C, symbols, iterations=10, uncoded=False, bec_decode
 
     # Displaying final figure
     #plt.legend()
-    plt.xlim(6,20)
+    plt.xlim(1,20)
     plt.ylim(0,1)
     #plt.show()
 
     return frame_error_rate
 
 
-with Profile() as prof:
-    # GF(67)
-    # dv dc 3 6
-    # k n 50 100
-    # 8C4
+if __name__ == "__main__":
+    with Profile() as prof:
+        # GF(67)
+        # dv dc 3 6
+        # k n 50 100
+        # 8C4
 
 
-    n_motifs, n_picks = 8, 4
-    dv, dc, k, n, ffdim = 3, 6, 10, 20, 67
-    read_length = 6
-    #run_singular_decoding(4)
-    graph, C, symbols, motifs = get_parameters(n_motifs, n_picks, dv, dc, k, n, ffdim)
-    run_singular_decoding(graph, C, read_length, symbols, motifs, n_picks)
-    
+        n_motifs, n_picks = 8, 4
+        dv, dc, k, n, ffdim = 3, 6, 100, 200, 67
+        read_length = 6
+        #run_singular_decoding(4)
+        graph, C, symbols, motifs = get_parameters(n_motifs, n_picks, dv, dc, k, n, ffdim)
+        run_singular_decoding(graph, C, read_length, symbols, motifs, n_picks)
+        
 
-    """
-    
-    
-    graph, C, symbols = get_parameters(n_motifs, n_picks, dv, dc, k, n, ffdim)
-    print(frame_error_rate(graph, C, symbols, iterations=100, label='100-150'))
-    print(frame_error_rate(graph, C, symbols, iterations=100, bec_decode=True, label='100-150 bec'))
+        
+        
+        print(frame_error_rate(graph, C, symbols, motifs, n_picks, iterations=100, label='100-200'))
+        print(frame_error_rate(graph, C, symbols, motifs, n_picks, iterations=100, bec_decode=True, label='100-200 bec'))
+        print(frame_error_rate(graph, C, symbols, motifs, n_picks, iterations=100, uncoded=True, label='100-200 uncoded'))
+        plt.xticks(np.arange(1, 20, 1))
+        plt.grid()
+        plt.legend()
+        plt.show()
 
+        
+        """
 
-    
+        k, n = 500, 1000
+        graph, C, symbols = get_parameters(n_motifs, n_picks, dv, dc, k, n, ffdim)
+        print(frame_error_rate(graph, C, symbols, iterations=100, label='100-200'))
+        print(frame_error_rate(graph, C, symbols, iterations=100, bec_decode=True, label='100-200 bec'))
+        
 
-    k, n = 500, 1000
-    graph, C, symbols = get_parameters(n_motifs, n_picks, dv, dc, k, n, ffdim)
-    print(frame_error_rate(graph, C, symbols, iterations=100, label='100-200'))
-    print(frame_error_rate(graph, C, symbols, iterations=100, bec_decode=True, label='100-200 bec'))
-    
+        #k, n = 250, 500
+        #graph, C, symbols = get_parameters(n_motifs, n_picks, dv, dc, k, n, ffdim)
+        #print(frame_error_rate(graph, C, symbols, iterations=100, label='50-100'))
 
-    #k, n = 250, 500
-    #graph, C, symbols = get_parameters(n_motifs, n_picks, dv, dc, k, n, ffdim)
-    #print(frame_error_rate(graph, C, symbols, iterations=100, label='50-100'))
-
-    plt.xticks(np.arange(6, 20, 1))
-    plt.grid()
-    plt.legend()
-    plt.show()
+        plt.xticks(np.arange(6, 20, 1))
+        plt.grid()
+        plt.legend()
+        plt.show()
+        """
 
     (
         Stats(prof)
@@ -268,6 +277,4 @@ with Profile() as prof:
         .print_stats(10)
     )
 
-
-# Let us store H and G for a 100 - 200 code and get a figure for that - after optimizing iterations
-"""
+    
