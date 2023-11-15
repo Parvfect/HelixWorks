@@ -2,6 +2,7 @@
 import random
 import numpy as np
 from graph import TannerGraph
+from tanner import VariableTannerGraph
 from Hmatrixbaby import ParityCheckMatrix
 import row_echleon as r
 from scipy.linalg import null_space
@@ -12,6 +13,7 @@ import re
 from cProfile import Profile
 from tqdm import tqdm
 import matplotlib.pyplot as plt
+from protograph_interface import get_Harr
 
 
 def choose_symbols(n_motifs, picks):
@@ -137,6 +139,50 @@ def get_parameters(n_motifs, n_picks, dv, dc, k, n, ffdim, display=True):
 
     return graph, C, symbols, motifs
 
+def get_parameters_sc_ldpc(n_motifs, n_picks, dv, dc, k, n, ffdim, display=True):
+    """ Returns the parameters for the simulation """
+
+    # Starting adresses from 1
+    motifs = np.arange(1, n_motifs+1)
+    
+    symbols = choose_symbols(n_motifs, n_picks)
+    
+    symbols.pop(-1)
+    symbols.pop(-2)
+    symbols.pop(-3)
+    
+    symbol_keys = np.arange(0, ffdim)
+    
+    Harr, dc, dv, k, n = get_Harr()   
+    graph = VariableTannerGraph(dv, dc, k, n)
+    graph.establish_connections(Harr)
+
+    H = r.get_H_matrix_sclpdc(dc, dv, k, n, Harr)
+    print(H)
+
+    G = r.parity_to_generator(H, ffdim=ffdim)
+
+
+    if np.any(np.dot(G, H.T) % ffdim != 0):
+        print("Matrices are not valid, aborting simulation")
+        exit()
+
+    input_arr = [random.choice(symbol_keys) for i in range(k)]
+
+    # Encode the input array
+    C = np.dot(input_arr, G) % ffdim
+
+    # Check if codeword is valid
+    if np.any(np.dot(C, H.T) % ffdim != 0):
+        print("Codeword is not valid, aborting simulation")
+        exit()
+
+    if display:
+        display_parameters(n_motifs, n_picks, dv, dc, k, n, motifs, symbols, Harr, H, G, C)
+
+    return graph, C, symbols, motifs
+
+
 
 def run_singular_decoding(graph, C, read_length, symbols, motifs, n_picks):
     
@@ -233,11 +279,8 @@ if __name__ == "__main__":
         dv, dc, k, n, ffdim = 3, 9, 100, 150, 67
         read_length = 6
         #run_singular_decoding(4)
-        graph, C, symbols, motifs = get_parameters(n_motifs, n_picks, dv, dc, k, n, ffdim)
+        graph, C, symbols, motifs = get_parameters_sc_ldpc(n_motifs, n_picks, dv, dc, k, n, ffdim)
         run_singular_decoding(graph, C, read_length, symbols, motifs, n_picks)
-        
-
-        
         
         print(frame_error_rate(graph, C, symbols, motifs, n_picks, iterations=100, label='CC Decoder'))
         print(frame_error_rate(graph, C, symbols, motifs, n_picks, iterations=100, bec_decode=True, label='BEC Decoder'))

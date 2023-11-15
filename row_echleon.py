@@ -49,6 +49,23 @@ def get_H_Matrix(dc, dv, k, n, Harr=None):
 
     return H.T
 
+def get_H_matrix_sclpdc(dc, dv, k, n, Harr):
+    """ Creates the H matrix from the Variable Node Connections of the  variable Tanner Graph """
+    
+    if Harr is None:
+        Harr = get_H_arr(dc, dv, k, n)
+
+    # Initialize H matrix - the size is wrong will need to fix at some point
+    H = np.zeros((n, n-k))
+
+    dv = dv[0]
+    # Fill H matrix where Variable Node is connected to Check Node
+    for (i,j) in enumerate(Harr):
+        H[i//dv, j] = 1
+
+    return H.T
+
+
 def get_reduced_row_echleon_form_H(H, ffdim=2):
     """ Returns the reduced row echleon form of H """
 

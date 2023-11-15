@@ -64,7 +64,7 @@ class VariableNode(Node):
     def __init__(self, dv, identifier):
         super().__init__(dv, identifier)
 
-class TannerGraph:
+class VariableTannerGraph:
     """ Initializes empty, on establishing connections creates H and forms links """
 
     def __init__(self, dv, dc, k, n, ffdim=2):
@@ -94,15 +94,19 @@ class TannerGraph:
         
         # In case Harr is sent as a parameter
         if Harr is None:
-            self.Harr = ParityCheckMatrix(self.dv, self.dc, self.k, self.n).get_H_arr()
+            self.Harr = get_Harr()
         else:
             self.Harr = np.array(Harr)
+
+        # Our Harr is implementation is different - will need to be considered when adapting - assuming that this is the check nodes they are connected to
+        Harr = self.Harr
         
-        Harr = self.Harr//self.dc
 
         # Divide Harr into dv parts  
         # But dv is a list in the case of the changing case
-        self.Harr = [Harr[i:i+self.dv[i]] for i in range(0, len(Harr), self.dv[i])]
+        # All the dvs are the same for this case
+        dv = self.dv[0]
+        Harr = [Harr[i:i+dv] for i in range(0, len(Harr), dv)]
         
         # Establish connections
         for (i,j) in enumerate(Harr):
@@ -342,25 +346,9 @@ class TannerGraph:
         return frame_error_rate
 
 
-def test():
-     with Profile() as profile:
-        dv, dc, k, n = 3, 6, 1000,
-        2000
-        t = TannerGraph(dv, dc, k, n)
-        t.frame_error_rate(plot=True, ensemble=False)
-        
-        # Get the Threshold
-        threshold = threshold_binary_search(dv, dc)
-        plt.axvline(x=threshold, color='r', linestyle='--', label="Threshold")
-
-        
-        plt.show()
-        (
-            Stats(profile)
-            .strip_dirs()
-            .sort_stats("cumtime")
-            .print_stats(10)
-        )
-
 if __name__ == "__main__":
-    test_arr = [[0], [3], [2], [0], [3], [2], [2, 4], [2, 4], [0, 1, 2], [0]]
+    """
+    Harr, dc, dv, k, n = get_Harr()   
+    graph = TannerGraph(dv, dc, k, n)
+    graph.establish_connections(Harr)
+    """
