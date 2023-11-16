@@ -24,9 +24,9 @@ def distracted_coupon_collector_channel(arr, R, P, n_motifs):
     reads = []
     for i in range(R):
         if random.random() > P:
-            reads.append(arr[random.randint(0, len(arr) - 1)])
+            reads.append(random.choice(arr))
         else:
-            reads.append(random.randint(0, n_motifs - 1))    
+            reads.append(random.randint(1, n_motifs+1))    
     return reads
 
 def simulate_reads(C, read_length, symbols, P, n_motifs):
@@ -41,27 +41,41 @@ def simulate_reads(C, read_length, symbols, P, n_motifs):
     # Make reads a set
     return reads
 
-
-def get_possible_symbols(reads, symbol_arr):
-     # Convert to possible symbols
-
-    reads = [set(i) for i in reads]
-    possible_symbols = []
-
-    for i in reads:
-        read_poss = []
-        if tuple(i) in symbol_arr:
-            read_poss.append(symbol_arr.index(tuple(i)))
-            possible_symbols.append(read_poss)
-        else: 
-            # Get closest matches
-            for j in symbol_arr:
-                if list(i)[0] in j:
-                    read_poss.append(symbol_arr.index(j))
-            possible_symbols.append(read_poss)
+def get_possible_symbols(reads, symbols, motifs, n_picks):
     
-    return possible_symbols
+    reads = [set(i) for i in reads]
+    
+    symbol_possibilities = []
+    for i in reads:
 
+        # Will only work for the Coupon Collector Channel
+        motifs_encountered = i
+        motifs_not_encountered = set(motifs) - set(motifs_encountered)
+        
+        read_symbol_possibilities = []
+
+        # For the case of distraction
+        if len(motifs_encountered) > n_picks:
+            return symbols
+
+        if len(motifs_encountered) == n_picks:
+            read_symbol_possibilities = [get_symbol_index(symbols, motifs_encountered)]
+        
+        else:
+            
+            # The symbol possibilites are the motifs that are encountered in combination with the motifs that are not encountered
+
+            remaining_motif_combinations = [set(i) for i in combinations(motifs_not_encountered, n_picks - len(motifs_encountered))]
+            
+            for i in remaining_motif_combinations:
+                possibe_motifs = motifs_encountered.union(i)
+                symbols = [set(i) for i in symbols]
+                if possibe_motifs in symbols:
+                    read_symbol_possibilities.append(get_symbol_index(symbols, motifs_encountered.union(i)))
+        
+        symbol_possibilities.append(read_symbol_possibilities)
+    
+    return symbol_possibilities
 
 def read_symbols(C, read_length, symbols, P, n_motifs):
     symbol_arr = list(symbols.values())
@@ -142,6 +156,6 @@ if __name__ == "__main__":
     n_motifs, n_picks = 8, 4
     dv, dc, k, n, ffdim = 3, 6, 50, 100, 67
     #run_singular_decoding(4)
-    graph, C, symbols = get_parameters(n_motifs, n_picks, dv, dc, k, n, ffdim)
+    graph, C, symbols = get_parameters(n_meotifs, n_picks, dv, dc, k, n, ffdim)
     run_singular_decoding(symbols, 5, 0.1, n_motifs)
 

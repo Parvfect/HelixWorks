@@ -50,6 +50,9 @@ class Node:
         
         return self.links
     
+    def get_links(self):
+        return self.links
+
     def replace_link(self, node, index):
         """ Replaces a link with another link """
         self.links[index] = node
@@ -83,8 +86,6 @@ class VariableTannerGraph:
             self.dc = [dc for i in range(n-k)]
 
         # For the singular case - it remains as an integer, but for the Changing Case it goes to a list, need to make sure that does not break everything
-        self.dv = dv
-        self.dc = dc
         self.k = k
         self.n = n
         self.ffdim = ffdim
@@ -100,6 +101,10 @@ class VariableTannerGraph:
 
         # Our Harr is implementation is different - will need to be considered when adapting - assuming that this is the check nodes they are connected to
         Harr = self.Harr
+
+        print(Harr)
+        print(self.dv)
+        print(self.dc)
         
 
         # Divide Harr into dv parts  
@@ -260,13 +265,18 @@ class VariableTannerGraph:
                 vn_vals = self.get_cn_link_values(i)
                 
                 for j in i.links:
-                
+                    
+                    # Skipping the check nodes with only one connection
+                    if len(vn_vals) == 1:
+                        continue
+
                     vals = vn_vals.copy()
                     current_value = self.vns[j].value
                     vals.remove(current_value)
                     
                     possibilites = permuter(vals, self.ffdim, current_value)
                     new_values = set(current_value).intersection(set(possibilites))
+                    
                     self.vns[j].value = list(new_values)
                     
                     """
@@ -285,7 +295,6 @@ class VariableTannerGraph:
 
             # Need to confirm the break condition is right
             # If we haven't increased certainty of any of the VNs as compared to the previous iteration, we break
-            total_possibilites = sum(len(i.value) for i in self.vns)
             if sum(len(i.value) for i in self.vns) == total_possibilites:
                 return [i.value for i in self.vns]
 

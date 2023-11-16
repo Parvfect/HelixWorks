@@ -1,14 +1,14 @@
 
 from Hmatrixbaby import ParityCheckMatrix
+from protograph_interface import get_Harr
 import row_echleon as r
 import uuid
 import os
 import numpy as np
 
 dv, dc, k, n, ffdim = 3, 6, 1000, 2000, 67
-PM = ParityCheckMatrix(dv, dc, k, n, ffdim=ffdim)
-Harr = PM.get_H_arr()
-H = PM.createHMatrix(Harr=Harr)
+Harr, dc, dv, k, n = get_Harr()
+H = r. get_H_matrix_sclpdc(dc, dv, k, n, Harr)
 G = r.parity_to_generator(H, ffdim=ffdim)
 
 if np.any(np.dot(G, H.T) % ffdim != 0):

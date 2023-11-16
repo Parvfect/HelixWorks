@@ -27,7 +27,7 @@ def get_vns(dv, dc, M, L):
         # ... fill in the next M VNs in the H matrix
         # ... (you can also directly add these vns to your Tanner graph)
         Harr.append(vns)
-    
+        
     return np.array(Harr)
 
 def get_Harr():
@@ -35,20 +35,20 @@ def get_Harr():
 
     dv = 3
     dc = 6
-    M = 6
-    L = 1
+    M = 200
+    L = 10
     Harr = get_vns(dv, dc, M, L)
     n = L*M
     cns_len = int((L + dv - 1) * dv / dc * M)
-    k = int(n - ((L + dv - 1) * dv / dc * M))
+    k = int(n - cns_len)
     dcs = np.zeros(cns_len, dtype=int)
     dvs = [3 for i in range(L * M)] 
 
+    
+    Harr = Harr.flatten()
     for i in Harr:
-        #for j in i:
         dcs[i] += 1
 
-    Harr = Harr.flatten()
 
     # Will also need to get dc's and dv's to initialize the Tanner graph - which can be obtained from the array graph itself.
 

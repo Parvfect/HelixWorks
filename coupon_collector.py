@@ -14,7 +14,7 @@ from cProfile import Profile
 from tqdm import tqdm
 import matplotlib.pyplot as plt
 from protograph_interface import get_Harr
-
+import sys
 
 def choose_symbols(n_motifs, picks):
     """ Returns Symbol Dictionary given the motifs and the number of picks """
@@ -34,6 +34,7 @@ def get_symbol_index(symbols, symbol):
 def get_possible_symbols(reads, symbols, motifs, n_picks):
     
     reads = [set(i) for i in reads]
+    
     symbol_possibilities = []
     for i in reads:
 
@@ -42,6 +43,10 @@ def get_possible_symbols(reads, symbols, motifs, n_picks):
         motifs_not_encountered = set(motifs) - set(motifs_encountered)
         
         read_symbol_possibilities = []
+
+        # For the case of distraction
+        if len(motifs_encountered) > n_picks:
+            return symbols
 
         if len(motifs_encountered) == n_picks:
             read_symbol_possibilities = [get_symbol_index(symbols, motifs_encountered)]
@@ -154,14 +159,12 @@ def get_parameters_sc_ldpc(n_motifs, n_picks, dv, dc, k, n, ffdim, display=True)
     symbol_keys = np.arange(0, ffdim)
     
     Harr, dc, dv, k, n = get_Harr()   
-    graph = VariableTannerGraph(dv, dc, k, n)
+    graph = VariableTannerGraph(dv, dc, k, n, ffdim=ffdim)
     graph.establish_connections(Harr)
 
     H = r.get_H_matrix_sclpdc(dc, dv, k, n, Harr)
-    print(H)
-
+    
     G = r.parity_to_generator(H, ffdim=ffdim)
-
 
     if np.any(np.dot(G, H.T) % ffdim != 0):
         print("Matrices are not valid, aborting simulation")
@@ -276,9 +279,10 @@ if __name__ == "__main__":
 
 
         n_motifs, n_picks = 8, 4
-        dv, dc, k, n, ffdim = 3, 9, 100, 150, 67
+        dv, dc, k, n, ffdim = 3, 6, 10, 20, 67
         read_length = 6
         #run_singular_decoding(4)
+        #graph, C, symbols, motifs = get_parameters(n_motifs, n_picks, dv, dc, k, n, ffdim)
         graph, C, symbols, motifs = get_parameters_sc_ldpc(n_motifs, n_picks, dv, dc, k, n, ffdim)
         run_singular_decoding(graph, C, read_length, symbols, motifs, n_picks)
         

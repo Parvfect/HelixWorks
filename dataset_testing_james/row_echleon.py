@@ -3,7 +3,6 @@ import sympy as sympy
 from sympy import GF
 from sympy.polys.matrices import DomainMatrix
 import numpy as np
-from Hmatrixbaby import ParityCheckMatrix
 
 def len_unique_elements(arr):
     return len(set(arr))
@@ -15,7 +14,7 @@ def get_H_arr(dc, dv, k, n):
     arr = np.arange(0, dv*n)
     flag = 0
 
-    while True:
+    while True: 
         flag = 0
 
         # Generate a random permutation of the array
@@ -34,11 +33,8 @@ def get_H_arr(dc, dv, k, n):
 
     return arr
 
-def get_H_Matrix(dc, dv, k, n, Harr=None):
+def get_H_Matrix(dc, dv, k, n, Harr):
     """ Creates the H matrix from the Variable Node Connections of the Tanner Graph """
-    
-    if Harr is None:
-        Harr = get_H_arr(dc, dv, k, n)
 
     # Initialize H matrix - the size is wrong will need to fix at some point
     H = np.zeros((n-k, n))
@@ -84,7 +80,6 @@ def check_standard_form_variance(H):
     I = np.eye(I_dim)
     columns_to_change = {}
     rows = shape[1]
-    print(H.shape)
     
     # Check if the last I_dim columns are I
     if np.all(H[:,k:n] == I):
@@ -146,7 +141,7 @@ def standard_H_to_G(H, ffdim=2, switches = None):
     return G.astype(int)
 
 
-def parity_to_generator(H, ffdim=2):
+def parity_to_generator(H, ffdim):
     """ Converts a parity check matrix to a generator matrix """
     H_rref = get_reduced_row_echleon_form_H(H, ffdim=ffdim)
     H_st, switches = switch_columns(H_rref, check_standard_form_variance(H_rref))
