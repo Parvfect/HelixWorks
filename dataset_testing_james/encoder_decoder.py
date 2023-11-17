@@ -14,7 +14,7 @@ def encoder(channel_input):
     """
     
     # What does the Motif Combination Channel Input look like in shape?
-    assert len(channel_input) == ()
+    assert len(channel_input) == 21 and len(channel_input[0]) == 8 and len(channel_input[0][0]) == 4
     dv, dc = 3, 9
     n = 168
     k = 112
@@ -23,22 +23,19 @@ def encoder(channel_input):
 
     symbols = choose_symbols(n_motifs, n_picks)
     motifs = np.arange(1, 9)
-    symbol_keys = list(symbols.keys())
     
     # Converting the Motif Combinations as Channel Input into their Symbol Forms
-    channel_input_symbols = [symbols.index(i) for i in channel_input]
+    channel_input_symbols = [[symbols.index(i) for i in j]for j in channel_input]
+    # Flattening the symbol array
+    channel_input_symbols = [item for sublist in channel_input_symbols for item in sublist]
 
-    symbols.pop(69)
-    symbols.pop(68)
-    symbols.pop(67)
-
-    Harr, H, G, graph = read_parameters()
+    Harr, H, G, graph = load_parameters()
 
     if np.any(np.dot(G, H.T) % ffdim != 0):
         print("Matrices are not valid, aborting simulation")
         exit()
 
-    input_arr = [random.choice(symbol_keys) for i in range(k)]
+    input_arr = create_random_input_arr(k)
     C = np.dot(input_arr, G) % ffdim
     
     # Check if codeword is valid
@@ -64,20 +61,22 @@ def decoder(channel_output, params):
     # Unpack the Parameters from the Encoder
     channel_input_symbols, mask, Harr, H, G, graph, C = params
 
+    # Flattening one layer down 
+    channel_output = [item for sublist in channel_output for item in sublist]
+
     symbols = choose_symbols(8, 4)
     motifs = np.arange(1, 9)
-
     masked_symbol_possibilities_ff70 = generate_symbol_possibilites(channel_output, symbols, motifs, n_picks=4)
 
-    symbol_possibilites_ff70 = invert_mask(masked_symbol_possibilities_ff70)
+    symbol_possibilites_ff70 = invert_mask(masked_symbol_possibilities_ff70, mask)
 
     symbol_possibilities = filter_symbols(symbol_possibilites_ff70)
 
-    assert len(symbol_possibilities) == len(self.vns)
+    assert len(symbol_possibilities) == len(graph.vns)
     graph.assign_values(symbol_possibilities)
 
     decoded_values = graph.coupon_collector_decoding()
-    
+ 
     if sum([len(i) for i in decoded_values]) == len(decoded_values):
         if np.all(np.array(decoded_values).T[0] == C):
             return True

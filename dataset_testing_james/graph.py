@@ -1,5 +1,6 @@
 
 import numpy as np
+import sys
 
 def permuter(arr, ffield, vn_value):
 
@@ -164,6 +165,7 @@ class TannerGraph:
                     vals.remove(current_value)
                     
                     possibilites = permuter(vals, self.ffdim, current_value)
+                    
                     new_values = set(current_value).intersection(set(possibilites))
                     self.vns[j].value = list(new_values)
                     
