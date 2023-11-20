@@ -17,7 +17,7 @@ if np.any(np.dot(G, H.T) % ffdim != 0):
 
 unique_filename = str(uuid.uuid4())
 
-filename = "codes/dv_dc_k_n_ffdim={}_{}_{}_{}_{}/{}".format(dv, dc, k, n, ffdim, unique_filename)
+filename = "codes/sc_dv_dc_k_n_ffdim={}_{}_{}_{}_{}/{}".format(dv[0], dc[0], k, n, ffdim, unique_filename)
 
 # Create the directory if it does not exist
 if not os.path.exists(filename):

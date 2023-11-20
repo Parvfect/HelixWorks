@@ -34,9 +34,9 @@ def get_Harr():
     """ Interface to get all the cns the vns are connected to """
 
     dv = 3
-    dc = 6
-    M = 200
-    L = 10
+    dc = 9
+    M = 12
+    L = 8
     Harr = get_vns(dv, dc, M, L)
     n = L*M
     cns_len = int((L + dv - 1) * dv / dc * M)

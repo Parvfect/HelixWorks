@@ -64,6 +64,3 @@ def conduct_all_tests():
     test_encoder()
     test_pipeline()
 
-if __name__ == "__main__":
-    conduct_all_tests()
-    print("All Tests Passed Succesfully!")

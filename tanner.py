@@ -267,7 +267,7 @@ class VariableTannerGraph:
                 for j in i.links:
                     
                     # Skipping the check nodes with only one connection
-                    if len(vn_vals) == 1:
+                    if len(vn_vals) <= 1:
                         continue
 
                     vals = vn_vals.copy()
