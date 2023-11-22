@@ -6,9 +6,12 @@ import uuid
 import os
 import numpy as np
 
-dv, dc, k, n, ffdim = 3, 6, 1000, 2000, 67
-Harr, dc, dv, k, n = get_Harr()
-H = r. get_H_matrix_sclpdc(dc, dv, k, n, Harr)
+dv, dc, k, n, ffdim = 3, 9, 852, 1278, 67
+Harr, dcs, dvs, k, n = get_Harr()
+
+H = r.get_H_matrix_sclpdc(dcs, dvs, k, n, Harr)
+dc = max(dcs)
+dv = dvs[0]
 G = r.parity_to_generator(H, ffdim=ffdim)
 
 if np.any(np.dot(G, H.T) % ffdim != 0):
@@ -17,7 +20,7 @@ if np.any(np.dot(G, H.T) % ffdim != 0):
 
 unique_filename = str(uuid.uuid4())
 
-filename = "codes/sc_dv_dc_k_n_ffdim={}_{}_{}_{}_{}/{}".format(dv[0], dc[0], k, n, ffdim, unique_filename)
+filename = "codes/sc_dv_dc_k_n_ffdim={}_{}_{}_{}_{}/{}".format(dv, dc, k, n, ffdim, unique_filename)
 
 # Create the directory if it does not exist
 if not os.path.exists(filename):

@@ -15,6 +15,7 @@ from tqdm import tqdm
 import matplotlib.pyplot as plt
 from protograph_interface import get_Harr
 import sys
+from load_saved_codes import get_saved_code
 
 def choose_symbols(n_motifs, picks):
     """ Returns Symbol Dictionary given the motifs and the number of picks """
@@ -84,7 +85,7 @@ def read_symbols(C, read_length, symbols, motifs, picks):
     return get_possible_symbols(reads, symbols, motifs, picks)
 
 
-def display_parameters(n_motifs, n_picks, dv, dc, k, n, motifs, symbols, Harr, H, G, C):
+def display_parameters(n_motifs, n_picks, dv, dc, k, n, motifs, symbols, Harr, H, G, C, ffdim):
 
     print("The number of motifs are {}".format(n_motifs))
     print("The number of picks are {}".format(n_picks))
@@ -101,7 +102,7 @@ def display_parameters(n_motifs, n_picks, dv, dc, k, n, motifs, symbols, Harr, H
     print("The Codeword is \n{}\n".format(C))
     return
 
-def get_parameters(n_motifs, n_picks, dv, dc, k, n, ffdim, display=True):
+def get_parameters(n_motifs, n_picks, dv, dc, k, n, ffdim, display=True, Harr=None, H=None, G=None):
     """ Returns the parameters for the simulation """
 
     # Starting adresses from 1
@@ -115,14 +116,14 @@ def get_parameters(n_motifs, n_picks, dv, dc, k, n, ffdim, display=True):
     
     symbol_keys = np.arange(0, ffdim)
 
-    Harr = r.get_H_arr(dc, dv, k, n)
-
     graph = TannerGraph(dv, dc, k, n, ffdim=ffdim)
+
+    if Harr is None:
+        Harr = r.get_H_arr(dc, dv, k, n)
+        H = r.get_H_Matrix(dc, dv, k, n, Harr)
+        G = r.parity_to_generator(H, ffdim=ffdim)
+
     graph.establish_connections(Harr)
-
-    H = r.get_H_Matrix(dc, dv, k, n, Harr)
-
-    G = r.parity_to_generator(H, ffdim=ffdim)
 
 
     if np.any(np.dot(G, H.T) % ffdim != 0):
@@ -140,7 +141,7 @@ def get_parameters(n_motifs, n_picks, dv, dc, k, n, ffdim, display=True):
         exit()
 
     if display:
-        display_parameters(n_motifs, n_picks, dv, dc, k, n, motifs, symbols, Harr, H, G, C)
+        display_parameters(n_motifs, n_picks, dv, dc, k, n, motifs, symbols, Harr, H, G, C, ffdim)
 
     return graph, C, symbols, motifs
 
@@ -193,36 +194,28 @@ def run_singular_decoding(graph, C, read_length, symbols, motifs, n_picks):
     
     reads = simulate_reads(C, read_length, symbols)
 
-    print("The Reads are:")
-    print(reads)
-    print()
-
     # Convert to possible symbols
-    
     possible_symbols = read_symbols(C, read_length, symbols, motifs, n_picks)
     #possible_symbols = get_possible_symbols(reads, symbol_arr)
-
-    print("The Symbol Possibilites based on the reads are:")
-    print(possible_symbols)
-    print()
 
     # Assigning values to Variable Nodes
     graph.assign_values(possible_symbols)
 
-    print("Decoded Values are")
     decoded_values = graph.coupon_collector_decoding()
  
     # Check if it is a homogenous array - if not then decoding is unsuccessful
     if sum([len(i) for i in decoded_values]) == len(decoded_values):
         if np.all(np.array(decoded_values).T[0] == C):
             print("Decoding successful")
+            return np.array(decoded_values).T[0]
     else:
         print("Decoding unsuccessful")
+        return None
 
 
-def frame_error_rate(graph, C, symbols, motifs, n_picks, iterations=10, uncoded=False, bec_decode=False, label=None):
+def frame_error_rate(k, n, dv, dc, graph, C, symbols, motifs, n_picks, iterations=10, uncoded=False, bec_decode=False, label=None):
     """ Returns the frame error rate curve - for same H, same G, same C"""
-    read_lengths = np.arange(2, 8)
+    read_lengths = np.arange(4, 12)
     frame_error_rate = []
 
     for i in tqdm(read_lengths):
@@ -280,15 +273,14 @@ if __name__ == "__main__":
 
 
         n_motifs, n_picks = 8, 4
-        dv, dc, k, n, ffdim = 3, 6, 800, 2000, 67
+        dv, dc, k, n, ffdim = 3, 9, 852, 1278, 67
         read_length = 6
-        Harr = np.load(r"C:\Users\Parv\Doc\HelixWorks\code\codes\sc_dv_dc_k_n_ffdim=3_2_800_2000_67\a50c958a-ccd4-486a-9c5d-02ce229da418\Harr.npy")
-        H = np.load(r"C:\Users\Parv\Doc\HelixWorks\code\codes\sc_dv_dc_k_n_ffdim=3_2_800_2000_67\a50c958a-ccd4-486a-9c5d-02ce229da418\H.npy")
-        G = np.load(r"C:\Users\Parv\Doc\HelixWorks\code\codes\sc_dv_dc_k_n_ffdim=3_2_800_2000_67\a50c958a-ccd4-486a-9c5d-02ce229da418\G.npy")
         #run_singular_decoding(4)
-        #graph, C, symbols, motifs = get_parameters(n_motifs, n_picks, dv, dc, k, n, ffdim)
-        graph, C, symbols, motifs = get_parameters_sc_ldpc(n_motifs, n_picks, dv, dc, k, n, ffdim)
-        run_singular_decoding(graph, C, read_length, symbols, motifs, n_picks)
+
+        Harr, H, G = get_saved_code(3,9,852,1278)
+        graph, C, symbols, motifs = get_parameters(n_motifs, n_picks, dv, dc, k, n, ffdim, display=True, Harr =Harr, H=H, G=G)
+        #graph, C, symbols, motifs = get_parameters_sc_ldpc(n_motifs, n_picks, dv, dc, k, n, ffdim)
+        #run_singular_decoding(graph, C, read_length, symbols, motifs, n_picks)
         
         print(frame_error_rate(graph, C, symbols, motifs, n_picks, iterations=1000, label='CC Decoder'))
         #print(frame_error_rate(graph, C, symbols, motifs, n_picks, iterations=100, bec_decode=True, label='BEC Decoder'))

@@ -26,7 +26,6 @@ def save_parameters():
     if np.any(np.dot(G, H.T) % ffdim != 0):
         print("Matrices are not valid, aborting simulation")
         exit()
-
     np.save("Harr.npy", Harr)
     np.save("H.npy", H)
     np.save("G.npy", G)

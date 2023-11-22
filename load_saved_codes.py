@@ -20,5 +20,3 @@ def get_saved_code(dv, dc, k, n, ffdim=67):
 
     return Harr, H, G
 
-
-Harr, H, G = get_saved_code(3,6,100,200)
