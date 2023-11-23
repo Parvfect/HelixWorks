@@ -8,6 +8,7 @@ import filecmp
 import csv
 import random
 import pandas as pd
+from itertools import combinations
 
 # So we convert a binary file to the number system 
 # file of 1280 bits out of which we encode the first 1278 bits
@@ -40,10 +41,19 @@ def convert_base_67(filename="input_txt.txt", bits=None):
     print(f"The Number of Padding Zeros are {padding_zeros}")
     [lst.append(0) for i in range(padding_zeros)]
     print(len(lst))
-    return lst, b
+    return lst, b, padding_zeros
 
 def read_combinations_from_csv(filename):
-    df = pd.read_csv(filename, header=0,encoding = "ISO-8859-1")
+
+    """
+    with open(filename) as csvfile:
+        spamreader = csv.reader(csvfile, delimiter=' ', quotechar='|')
+        for sequence in spamreader:
+            print(sequence)
+        
+    sys.exit()
+    """
+    df = pd.read_csv(filename, encoding = "ISO-8859-1")
     encoded_symbols = df.to_numpy()
     assert encoded_symbols.shape == (1280, 8)
 
@@ -134,19 +144,19 @@ def create_csv_file(output_arr, filename):
             new_line = [f'“{i}“' for i in output_arr[i]] 
             writer.writerow(new_line)
 
-def create_mask(C):
+def create_mask(rng, mask_length):
     """ 
     Creates the mask to convert from FF67 to FF70 by mod 70 addition to a psuedo random string
+    Takes in the rng seed so we can save our masks
     ----
     Codeword + Mask % 70 = Channel Input
     """
-    channel_input_symbols = [random.randint(0,69) for i in range(len(C))]
-    return [(channel_input_symbols[i] - C[i]) % 70 for i in range(len(C))], channel_input_symbols
+    return [rng.integers(0,70) for i in range(mask_length)]
 
 def invert_mask(masked_symbol_possibilites_ff70, mask):
     """ Inverts the mask and returns unmasked symbol possff70 """
     assert len(mask) == len(masked_symbol_possibilites_ff70)
-    return [[(j + mask[i]) % 70 for j in masked_symbol_possibilites_ff70[i]]for i in range(len(mask))]
+    return [[(j - mask[i]) % 70 for j in masked_symbol_possibilites_ff70[i]]for i in range(len(mask))]
 
 def fix_combinations_shape(combinations, symbols):
     # Unpacking

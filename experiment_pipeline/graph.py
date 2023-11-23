@@ -8,6 +8,7 @@ from tqdm import tqdm
 from cProfile import Profile
 from pstats import Stats
 import re
+import sys
 
 def permuter(arr, ffield, vn_value):
 
@@ -241,12 +242,12 @@ class TannerGraph:
                 for j in i.links:
                 
                     vals = vn_vals.copy()
-                    print(vals)
                     current_value = self.vns[j].value
-                    print(current_value)
                     vals.remove(current_value)
+
                     
                     possibilites = permuter(vals, self.ffdim, current_value)
+                   
                     new_values = set(current_value).intersection(set(possibilites))
                     self.vns[j].value = list(new_values)
                     
