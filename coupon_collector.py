@@ -282,7 +282,7 @@ if __name__ == "__main__":
         #graph, C, symbols, motifs = get_parameters_sc_ldpc(n_motifs, n_picks, dv, dc, k, n, ffdim)
         #run_singular_decoding(graph, C, read_length, symbols, motifs, n_picks)
         
-        print(frame_error_rate(graph, C, symbols, motifs, n_picks, iterations=1000, label='CC Decoder'))
+        print(frame_error_rate(k, n, dv, dc, graph, C, symbols, motifs, n_picks, iterations=10000, label='CC Decoder'))
         #print(frame_error_rate(graph, C, symbols, motifs, n_picks, iterations=100, bec_decode=True, label='BEC Decoder'))
         #print(frame_error_rate(graph, C, symbols, motifs, n_picks, iterations=100, uncoded=True, label='Uncoded'))
         plt.xticks(np.arange(1, 19, 1))
