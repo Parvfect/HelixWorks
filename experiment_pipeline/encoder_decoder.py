@@ -6,10 +6,12 @@ import numpy as np
 import pandas as pd
 import sys
 import filecmp
+import os
 
 n_motifs, n_picks = 8, 4
 dv, dc, k, n, ffdim = 3, 9, 852, 1278, 67
 read_length = 8
+padding_zeros = 217
 
 def encoder():
 
@@ -62,7 +64,7 @@ def encoder():
     # Pass and save Relevant params
     return padding_zeros
 
-def simulate_channel():
+def simulate_channel(read_length=8):
     """ 
     Simulates the Channel - reads from encoded.csv - passes it through the channel and writes the result to channel_output.csv
     """
@@ -82,7 +84,7 @@ def simulate_channel():
     read_arr = [reads[i: i+ len_division] for i in range(0, len(reads), len_division)]
     create_csv_file(read_arr, filename='channel_output.csv')
 
-def decoder(padding_zeros):
+def decoder():
     # Read Channel Output and put it into a numpy array
     output_symbols_unpacked = read_combinations_from_csv("channel_output.csv")
 
@@ -116,7 +118,13 @@ def decoder(padding_zeros):
         graph.assign_values(symbols_ff67)
 
         # Decode 
-        decoded_vals = np.array(graph.coupon_collector_decoding()).T[0]
+
+        decoded_values = graph.coupon_collector_decoding()
+        
+        if sum([len(i) for i in decoded_values]) == len(symbols_ff67):
+            decoded_vals = np.array(decoded_values).T[0]
+        else:
+            return False
 
         # Append to Codeword Array
         codewords_base_67.append(decoded_vals)
@@ -140,17 +148,15 @@ def decoder(padding_zeros):
     for pw in range(len(recovered_vals)):
         b2 += int(67**pw) * int(recovered_vals[pw])
 
-    #assert b == b2
+    # Length parameter is the byte size of the input file
+    byte_length = os.path.getsize("input_txt.txt")
+    byte_array = b2.to_bytes(byte_length,'big') 
 
-    byte_array = b2.to_bytes(4884, 'big') 
     with open("output.txt", "wb") as file_handle:
         file_handle.write(byte_array)
 
     # Check the files are identical
-    assert filecmp.cmp('input_txt.txt', 'output.txt')
-    print("The Files are the same")
+    return filecmp.cmp('input_txt.txt', 'output.txt')
 
 
-#padding_zeros = encoder()
-simulate_channel()
-decoder(375)
+

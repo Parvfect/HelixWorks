@@ -27,6 +27,7 @@ def convert_base_67(filename="input_txt.txt", bits=None):
     
     with open(filename, "rb") as file_handle:  
         b = int.from_bytes(bytearray(file_handle.read()), byteorder='big')
+        print(bytearray(file_handle.read()))
     
 
     #b = int.from_bytes(bytearray(file_handle.read()), byteorder='big')
@@ -36,6 +37,7 @@ def convert_base_67(filename="input_txt.txt", bits=None):
         quot, rem = divmod(quot, 67)
         lst.append(rem)
     
+    print(len(lst))
     # Pads the zeros according to the leftover size
     padding_zeros = 852*8 - len(lst)
     print(f"The Number of Padding Zeros are {padding_zeros}")
@@ -61,7 +63,7 @@ def read_combinations_from_csv(filename):
     for i in range(encoded_symbols.shape[0]):
         for j in range(encoded_symbols.shape[1]):
             t = encoded_symbols[i,j]
-            t = np.fromstring(t.replace("\x93", "").replace("[", "").replace("]", ""), sep=',', dtype=int)
+            t = np.fromstring(t.replace("[", "").replace("]", ""), sep=',', dtype=int)
             encoded_symbols[i,j] = t
     
     return encoded_symbols
@@ -133,7 +135,7 @@ def find_I_columns(G):
 
 
 def create_csv_file(output_arr, filename):
-    header = ["“Payload1“", "“Payload2“","“Payload3“","“Payload4“","“Payload5“","“Payload6“","“Payload7“","“Payload8“"]
+    header = ["Payload1", "Payload2","Payload3","Payload4","Payload5","Payload6","Payload7","Payload8"]
     with open(filename, 'w', newline="") as f:
         # create the csv writer
         writer = csv.writer(f)
@@ -141,7 +143,7 @@ def create_csv_file(output_arr, filename):
         # write a row to the csv file
         writer.writerow(header)
         for i in range(len(output_arr)):
-            new_line = [f'“{i}“' for i in output_arr[i]] 
+            new_line = [f"{i}" for i in output_arr[i]] 
             writer.writerow(new_line)
 
 def create_mask(rng, mask_length):
@@ -220,106 +222,3 @@ def filter_symbols(symbol_possibilites_ff70):
 
     return filtered_symbols
     
-
-
-"""
-input_arr, b = convert_base_67()
-
-len_division = int(len(input_arr)/8)
-# Chop up into 8 input arrays
-input_arrs = [input_arr[i: i+ len_division] for i in range(0, len(input_arr), len_division)]
-
-
-# Save the column indices
-Harr = np.load("Harr.npy")
-H = np.load("H.npy")
-G = np.load("G.npy")
-column_indices = find_I_columns(G)
-input_vals = []
-combining_stuff = []
-n_motifs, n_picks = 8, 4
-dv, dc, k, n, ffdim = 3, 9, 852, 1278, 67
-read_length = 8
-#run_singular_decoding(4)
-graph = TannerGraph(dv, dc, k, n, ffdim)
-graph.establish_connections(Harr)
-motifs = np.arange(1, n_motifs+1)
-
-symbols = choose_symbols(n_motifs, n_picks)
-base_70_symbols = choose_symbols(n_motifs, n_picks)
-
-symbols.pop()
-symbols.pop()
-symbols.pop()
-
-symbol_keys = np.arange(0, ffdim)
-encoded_combinations = []
-C = []
-codewords = []
-masks = []
-base70_codewords = []
-
-for i in range(len(input_arrs)):
-        
-    C.append(get_codeword(input_arrs[i]))
-    mask, base70_codeword = create_mask(C[i])
-    masks.append(mask)
-    base70_codewords.append(base70_codeword)
-    encoded_combinations.append([base_70_symbols[i] for i in base70_codeword])
-
-output_arrs = fix_combinations_shape(encoded_combinations)
-create_csv_file(output_arrs, filename='encoded.csv')
-
-# Now we simulate reads on the base 70 codewords and write to the decoded file
-reads = []
-
-for i in base70_codewords:
-    read = simulate_reads(i, read_length, base_70_symbols)
-    read = [list(set(i)) for i in read]
-    reads.append(read)
-
-reads = fix_combinations_shape(reads)
-create_csv_file(reads, filename='channel_output.csv')
-
-
-
-# Now we read back what we get from the channel
-df = pd.read_csv("channel_output.csv", header=0,encoding = "ISO-8859-1")
-channel_output = df.to_numpy()
-assert channel_output.shape == (1280,8)
-
-# We have to remove the padded zeros, flatten one layer down and rearrange into networks of 8
-# We then run the decoder pipeline for each input array and put it together
-# Need some better organization
-
-
-
-sys.exit()
-decoded_values, combinations = run_decoding(i)
-recovered_input = [decoded_values[int(j)] for j in column_indices]
-combining_stuff.append(combinations)
-input_vals.append(recovered_input)
-
-
-
-
-input_vals = np.array(input_vals).flatten()
-
-input_vals = input_vals[:6441]
-input_vals = input_vals.astype(int)
-b2 = 0
-for pw in range(len(input_vals)):
-    b2 += int(67**pw) * int(input_vals[pw])
-
-print(b == b2)
-
-
-byte_array = b2.to_bytes(4884, 'big') 
-with open("output.txt", "wb") as file_handle:
-    file_handle.write(byte_array)
-
-# Check the files are identical
-print(filecmp.cmp('input_txt.txt', 'output.txt'))
-
-
-"""
