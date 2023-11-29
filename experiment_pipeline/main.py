@@ -38,5 +38,5 @@ def fixed_read_length(read_length=9, iterations=1000):
     
     print(f"Error Rate for {iterations} iterations for {read_length} read length is {(iterations - correct_reads)/iterations}")
 
-encoder()
-frame_error_rate()
+fixed_read_length()
+

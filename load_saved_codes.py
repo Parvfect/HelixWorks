@@ -5,9 +5,15 @@ import os
 import random
 
 
-def get_saved_code(dv, dc, k, n, ffdim=67):
+def get_saved_code(dv, dc, k, n, L, M, ffdim=67, code_class=""):
+
+    
     supplementary_path = r"C:\Users\Parv\Doc\HelixWorks\code\codes"
-    code_path = "dv_dc_k_n_ffdim={}_{}_{}_{}_{}".format(dv, dc, k, n, ffdim)
+
+    if code_class == "sc_":
+        code_path = f"{code_class}dv_dc_k_n_L_M_ffdim={dv}_{dc}_{k}_{n}_{L}_{M}_{ffdim}"
+    else:
+        code_path = f"{code_class}dv_dc_k_n_ffdim={dv}_{dc}_{k}_{n}_{ffdim}"
     new_path = os.path.join(supplementary_path, code_path)
     unique_id = random.choice(os.listdir(new_path))
     final_path = os.path.join(new_path, unique_id)

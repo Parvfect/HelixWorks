@@ -13,7 +13,7 @@ import re
 from cProfile import Profile
 from tqdm import tqdm
 import matplotlib.pyplot as plt
-from protograph_interface import get_Harr
+from protograph_interface import get_Harr_sc_ldpc, get_dv_dc
 import sys
 from load_saved_codes import get_saved_code
 
@@ -160,7 +160,9 @@ def get_parameters_sc_ldpc(n_motifs, n_picks, dv, dc, k, n, ffdim, display=True,
     symbol_keys = np.arange(0, ffdim)
     
     if Harr is None:
-        Harr, dc, dv, k, n = get_Harr()   
+        Harr, dv, dc, k, n = get_Harr_sc_ldpc(dv, dc, k, n)   
+    else:
+        dv, dc = get_dv_dc(dv, dc, k, n, Harr)
     
     graph = VariableTannerGraph(dv, dc, k, n, ffdim=ffdim)
     graph.establish_connections(Harr)
@@ -213,9 +215,9 @@ def run_singular_decoding(graph, C, read_length, symbols, motifs, n_picks):
         return None
 
 
-def frame_error_rate(k, n, dv, dc, graph, C, symbols, motifs, n_picks, iterations=10, uncoded=False, bec_decode=False, label=None):
+def frame_error_rate(k, n, dv, dc, graph, C, symbols, motifs, n_picks, iterations=50, uncoded=False, bec_decode=False, label=None, code_class=""):
     """ Returns the frame error rate curve - for same H, same G, same C"""
-    read_lengths = np.arange(4, 12)
+    read_lengths = np.arange(2, 12)
     frame_error_rate = []
 
     for i in tqdm(read_lengths):
@@ -236,79 +238,60 @@ def frame_error_rate(k, n, dv, dc, graph, C, symbols, motifs, n_picks, iteration
             if sum([len(i) for i in decoded_values]) == len(decoded_values):
                 if np.all(np.array(decoded_values).T[0] == C):
                     counter += 1
-            """
-            # Adaptive Iterator
-            if prev_error - ((iterations - counter)/iterations) < 0.001:
-                break
 
-            prev_error = (iterations - counter)/iterations
-            """
-
-        # Calculate Error Rate and append to list
         error_rate = (iterations - counter)/iterations
         frame_error_rate.append(error_rate)
     
     
     plt.plot(read_lengths, frame_error_rate, 'o')
     plt.plot(read_lengths, frame_error_rate, label=label)
-    plt.title("Frame Error Rate for CC for {}-{}  {}-{} for 8C4 Symbols".format(k, n, dv, dc))
+    plt.title("Frame Error Rate for CC for {}{}-{}  {}-{} for 8C4 Symbols".format(code_class, k, n, dv, dc))
     plt.ylabel("Frame Error Rate")
     plt.xlabel("Read Length")
 
     # Displaying final figure
-    #plt.legend()
     plt.xlim(1,19)
     plt.ylim(0,1)
-    #plt.show()
 
     return frame_error_rate
+
+def run_fer(n_motifs, n_picks, dv, dc, k, n, L, M, ffdim, code_class="", iterations=50, bec_decoder=False, uncoded=False, saved_code=False, singular_decoding=True):
+
+    Harr, H, G = None, None, None
+
+    if saved_code:
+        Harr, H, G = get_saved_code(dv, dc, k, n, L, M, code_class=code_class)
+    
+    if code_class == "sc_":
+        graph, C, symbols, motifs = get_parameters_sc_ldpc(n_motifs, n_picks, dv, dc, k, n, ffdim, display=False, Harr=Harr, H=H, G=G)
+    else:
+        graph, C, symbols, motifs = get_parameters(n_motifs, n_picks, dv, dc, k, n, ffdim, display=False, Harr =Harr, H=H, G=G)
+    
+    if singular_decoding:
+        run_singular_decoding(graph, C, 8, symbols, motifs, n_picks)
+    
+    print(frame_error_rate(k, n, dv, dc, graph, C, symbols, motifs, n_picks, iterations=iterations, label=f'CC Decoder', code_class=code_class))
+    
+    if bec_decoder:
+        print(frame_error_rate(graph, C, symbols, motifs, n_picks, iterations=100, bec_decode=True, label='BEC Decoder'))
+    
+    if uncoded:
+        print(frame_error_rate(graph, C, symbols, motifs, n_picks, iterations=100, uncoded=True, label='Uncoded'))
+    
+    plt.xticks(np.arange(1, 19, 1))
+    plt.grid()
+    plt.legend()
+    plt.show()
 
 
 if __name__ == "__main__":
     with Profile() as prof:
-        # GF(67)
-        # dv dc 3 6
-        # k n 50 100
-        # 8C4
-
-
         n_motifs, n_picks = 8, 4
-        dv, dc, k, n, ffdim = 3, 9, 852, 1278, 67
+        dv, dc, ffdim = 3, 9, 67
+        k, n = 612, 1020
+        L, M = 10, 102
         read_length = 6
-        #run_singular_decoding(4)
-
-        Harr, H, G = get_saved_code(3,9,852,1278)
-        graph, C, symbols, motifs = get_parameters(n_motifs, n_picks, dv, dc, k, n, ffdim, display=True, Harr =Harr, H=H, G=G)
-        #graph, C, symbols, motifs = get_parameters_sc_ldpc(n_motifs, n_picks, dv, dc, k, n, ffdim)
-        #run_singular_decoding(graph, C, read_length, symbols, motifs, n_picks)
-        
-        print(frame_error_rate(k, n, dv, dc, graph, C, symbols, motifs, n_picks, iterations=10000, label='CC Decoder'))
-        #print(frame_error_rate(graph, C, symbols, motifs, n_picks, iterations=100, bec_decode=True, label='BEC Decoder'))
-        #print(frame_error_rate(graph, C, symbols, motifs, n_picks, iterations=100, uncoded=True, label='Uncoded'))
-        plt.xticks(np.arange(1, 19, 1))
-        plt.grid()
-        plt.legend()
-        plt.show()
-
-        
-        """
-
-        k, n = 500, 1000
-        graph, C, symbols = get_parameters(n_motifs, n_picks, dv, dc, k, n, ffdim)
-        print(frame_error_rate(graph, C, symbols, iterations=100, label='100-200'))
-        print(frame_error_rate(graph, C, symbols, iterations=100, bec_decode=True, label='100-200 bec'))
-        
-
-        #k, n = 250, 500
-        #graph, C, symbols = get_parameters(n_motifs, n_picks, dv, dc, k, n, ffdim)
-        #print(frame_error_rate(graph, C, symbols, iterations=100, label='50-100'))
-
-        plt.xticks(np.arange(6, 20, 1))
-        plt.grid()
-        plt.legend()
-        plt.show()
-        """
-
+        run_fer(n_motifs, n_picks, dv, dc, k, n, L, M, ffdim, code_class="sc_", saved_code=True)
     (
         Stats(prof)
         .strip_dirs()

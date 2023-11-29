@@ -12,6 +12,7 @@ from cProfile import Profile
 from density_evolution import threshold_binary_search
 from pstats import Stats
 import re
+import sys
 
 def permuter(arr, ffield, vn_value):
 
@@ -101,11 +102,6 @@ class VariableTannerGraph:
 
         # Our Harr is implementation is different - will need to be considered when adapting - assuming that this is the check nodes they are connected to
         Harr = self.Harr
-
-        print(Harr)
-        print(self.dv)
-        print(self.dc)
-        
 
         # Divide Harr into dv parts  
         # But dv is a list in the case of the changing case
@@ -249,14 +245,14 @@ class VariableTannerGraph:
         return np.array([i.value for i in self.vns])
 
 
-    def coupon_collector_decoding(self, max_iterations=10000):
+    def coupon_collector_decoding(self):
         """ Decodes for the case of symbol possiblities for each variable node 
             utilising Belief Propagation - may be worth doing for BEC as well 
         """
         
         unresolved_vns = sum([1 for i in self.vns if len(i.value) > 1 ])
         resolved_vns = 0
-        total_possibilites = 0
+        total_possibilites = sum([len(i.value) for i in self.vns])
         
         while True:
             # Iterating through all the check nodes
@@ -265,18 +261,13 @@ class VariableTannerGraph:
                 vn_vals = self.get_cn_link_values(i)
                 
                 for j in i.links:
-                    
-                    # Skipping the check nodes with only one connection
-                    if len(vn_vals) <= 1:
-                        continue
-
+                
                     vals = vn_vals.copy()
                     current_value = self.vns[j].value
                     vals.remove(current_value)
                     
                     possibilites = permuter(vals, self.ffdim, current_value)
                     new_values = set(current_value).intersection(set(possibilites))
-                    
                     self.vns[j].value = list(new_values)
                     
                     """
@@ -288,20 +279,19 @@ class VariableTannerGraph:
                     
                 decoded_values = [i.value for i in self.vns]
 
-                
                 if unresolved_vns ==  resolved_vns and sum([len(i) for i in decoded_values]) == len(decoded_values):
                     return np.array([i.value for i in self.vns])
             
 
             # Need to confirm the break condition is right
             # If we haven't increased certainty of any of the VNs as compared to the previous iteration, we break
-            if sum(len(i.value) for i in self.vns) == total_possibilites:
+            if sum([len(i.value) for i in self.vns]) == total_possibilites:
                 return [i.value for i in self.vns]
 
             #if prev_resolved_vns == resolved_vns:
             #       return [i.value for i in self.vns]
             
-            total_possibilites = sum(len(i.value) for i in self.vns)
+            total_possibilites = sum([len(i.value) for i in self.vns])
             
             prev_resolved_vns = resolved_vns
                 

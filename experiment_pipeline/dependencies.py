@@ -133,15 +133,13 @@ def find_I_columns(G):
         
     return I_indices
 
-
 def create_csv_file(output_arr, filename):
-    header = ["Payload1", "Payload2","Payload3","Payload4","Payload5","Payload6","Payload7","Payload8"]
     with open(filename, 'w', newline="") as f:
+        f.write('"Payload1","Payload2","Payload3","Payload4","Payload5","Payload6","Payload7","Payload8"\n')
         # create the csv writer
         writer = csv.writer(f)
 
         # write a row to the csv file
-        writer.writerow(header)
         for i in range(len(output_arr)):
             new_line = [f"{i}" for i in output_arr[i]] 
             writer.writerow(new_line)
