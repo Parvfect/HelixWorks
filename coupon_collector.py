@@ -255,7 +255,7 @@ def frame_error_rate(k, n, dv, dc, graph, C, symbols, motifs, n_picks, iteration
 
     return frame_error_rate
 
-def run_fer(n_motifs, n_picks, dv, dc, k, n, L, M, ffdim, code_class="", iterations=50, bec_decoder=False, uncoded=False, saved_code=False, singular_decoding=True):
+def run_fer(n_motifs, n_picks, dv, dc, k, n, L, M, ffdim, code_class="", iterations=5, bec_decoder=False, uncoded=False, saved_code=False, singular_decoding=True):
 
     Harr, H, G = None, None, None
 
@@ -288,10 +288,10 @@ if __name__ == "__main__":
     with Profile() as prof:
         n_motifs, n_picks = 8, 4
         dv, dc, ffdim = 3, 9, 67
-        k, n = 612, 1020
-        L, M = 10, 102
+        k, n = 852, 1278
+        L, M = 0, 0
         read_length = 6
-        run_fer(n_motifs, n_picks, dv, dc, k, n, L, M, ffdim, code_class="sc_", saved_code=True)
+        run_fer(n_motifs, n_picks, dv, dc, k, n, L, M, ffdim, code_class="", saved_code=True)
     (
         Stats(prof)
         .strip_dirs()
