@@ -17,8 +17,7 @@ from protograph_interface import get_Harr_sc_ldpc, get_dv_dc
 import sys
 from load_saved_codes import get_saved_code
 
-cycle_visibilities = 
-[
+cycle_visibilities = [
     0.6003421116458378,
     0.5110994804498513,
     0.3667743212019863,
@@ -240,7 +239,9 @@ def run_singular_decoding(graph, C, read_length, symbols, motifs, n_picks):
 
 def frame_error_rate(k, n, dv, dc, graph, C, symbols, motifs, n_picks, iterations=50, uncoded=False, bec_decode=False, label=None, code_class=""):
     """ Returns the frame error rate curve - for same H, same G, same C"""
-    read_lengths = np.arange(20, 35)
+    
+    starting_read, ending_read = 16, 28
+    read_lengths = np.arange(starting_read, ending_read)
     frame_error_rate = []
 
     for i in tqdm(read_lengths):
@@ -273,8 +274,12 @@ def frame_error_rate(k, n, dv, dc, graph, C, symbols, motifs, n_picks, iteration
     plt.xlabel("Read Length")
 
     # Displaying final figure
-    plt.xlim(1,19)
+    plt.xlim(starting_read, ending_read)
     plt.ylim(0,1)
+    plt.xticks(np.arange(starting_read, ending_read, 1))
+    plt.grid()
+    plt.legend()
+    
 
     return frame_error_rate
 
@@ -301,9 +306,6 @@ def run_fer(n_motifs, n_picks, dv, dc, k, n, L, M, ffdim, code_class="", iterati
     if uncoded:
         print(frame_error_rate(graph, C, symbols, motifs, n_picks, iterations=100, uncoded=True, label='Uncoded'))
     
-    plt.xticks(np.arange(1, 19, 1))
-    plt.grid()
-    plt.legend()
     plt.show()
 
 
@@ -311,10 +313,10 @@ if __name__ == "__main__":
     with Profile() as prof:
         n_motifs, n_picks = 8, 4
         dv, dc, ffdim = 3, 9, 67
-        k, n = 852, 1278
-        L, M = 0, 0
+        k, n = 612, 1020
+        L, M = 10, 102
         read_length = 6
-        run_fer(n_motifs, n_picks, dv, dc, k, n, L, M, ffdim, code_class="", saved_code=True, singular_decoding=False, iterations=5)
+        run_fer(n_motifs, n_picks, dv, dc, k, n, L, M, ffdim, code_class="sc_", saved_code=True, singular_decoding=False, iterations=50)
     (
         Stats(prof)
         .strip_dirs()
