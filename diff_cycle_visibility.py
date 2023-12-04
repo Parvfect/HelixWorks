@@ -17,6 +17,17 @@ from protograph_interface import get_Harr_sc_ldpc, get_dv_dc
 import sys
 from load_saved_codes import get_saved_code
 
+cycle_visibilities = 
+[
+    0.6003421116458378,
+    0.5110994804498513,
+    0.3667743212019863,
+    0.2716979205228691,
+    0.22870418831458952,
+    0.21462399632357634,
+    0.1748981962546434,
+    0.10786729131827871
+]
 
 def choose_symbols(n_motifs, picks):
     """ Returns Symbol Dictionary given the motifs and the number of picks """
@@ -78,9 +89,16 @@ def simulate_reads(C, read_length, symbols):
     
     reads = []
     # Simulate one read
+    cycle_counter = 0
     for i in C:
-        read = coupon_collector_channel(symbols[i], read_length)
+
+        if cycle_counter == 8:
+            cycle_counter = 0
+
+        read = coupon_collector_channel(symbols[i], read_length, cycle_visibilities[cycle_counter])
         reads.append(read)
+
+        cycle_counter += 1
 
     # Make reads a set
     return reads
@@ -222,7 +240,7 @@ def run_singular_decoding(graph, C, read_length, symbols, motifs, n_picks):
 
 def frame_error_rate(k, n, dv, dc, graph, C, symbols, motifs, n_picks, iterations=50, uncoded=False, bec_decode=False, label=None, code_class=""):
     """ Returns the frame error rate curve - for same H, same G, same C"""
-    read_lengths = np.arange(2, 12)
+    read_lengths = np.arange(20, 35)
     frame_error_rate = []
 
     for i in tqdm(read_lengths):
@@ -260,7 +278,7 @@ def frame_error_rate(k, n, dv, dc, graph, C, symbols, motifs, n_picks, iteration
 
     return frame_error_rate
 
-def run_fer(n_motifs, n_picks, dv, dc, k, n, L, M, ffdim, code_class="", iterations=5, bec_decoder=False, uncoded=False, saved_code=False, singular_decoding=True):
+def run_fer(n_motifs, n_picks, dv, dc, k, n, L, M, ffdim, code_class="", iterations=10, bec_decoder=False, uncoded=False, saved_code=False, singular_decoding=True):
 
     Harr, H, G = None, None, None
 
@@ -296,7 +314,7 @@ if __name__ == "__main__":
         k, n = 852, 1278
         L, M = 0, 0
         read_length = 6
-        run_fer(n_motifs, n_picks, dv, dc, k, n, L, M, ffdim, code_class="", saved_code=True)
+        run_fer(n_motifs, n_picks, dv, dc, k, n, L, M, ffdim, code_class="", saved_code=True, singular_decoding=False, iterations=5)
     (
         Stats(prof)
         .strip_dirs()
