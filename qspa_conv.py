@@ -121,19 +121,21 @@ class QSPADecoder:
         Q = np.zeros(shape=(self.m, self.n, self.GF.order))
         S = np.zeros(shape=(self.m, self.n, self.GF.order))
 
+        # Initializes Variable Nodes with the Likelihoods
         Q = self.initialize_Q_msgs(P, Q)
+        
         for it in range(max_iter):
-            print(f'Decoding: iteration {it + 1}')
+            #print(f'Decoding: iteration {it + 1}')
             S = self.update_S_msgs(Q, S)
             z = self.decode_hard(P, S)
-
+            
             parity = not np.matmul(self.GFH, z).any()
             if parity:
-                print('Decoding successful!')
+                #print('Decoding successful!')
                 return z
             else:
                 Q = self.update_Q_msgs(P, Q, S)
-        print('Decoding unsuccessful! Max. iterations done')
+        #print('Decoding unsuccessful! Max. iterations done')
 
     def initialize_Q_msgs(self, P, Q):
         """Initialize messages from variable nodes (VN) to check nodes (CN).

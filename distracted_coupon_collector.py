@@ -197,8 +197,8 @@ def get_parameters(n_motifs, n_picks, dv, dc, k, n, ffdim,  Harr=None, H=None, G
     graph = TannerGraph(dv, dc, k, n, ffdim=ffdim)
 
     if Harr is None:
-        Harr = r.get_H_arr(dc, dv, k, n)
-        H = r.get_H_Matrix(dc, dv, k, n, Harr)
+        Harr = r.get_H_arr(dv, dc, k, n)
+        H = r.get_H_Matrix(dv, dc, k, n, Harr)
         G = r.parity_to_generator(H, ffdim=ffdim)
 
     graph.establish_connections(Harr)
@@ -327,7 +327,7 @@ def run_singular_decoding(graph, C, read_length, symbols, motifs, n_picks, P):
         return False
 
 
-def frame_error_rate(k, n, dv, dc, graph, C, symbols, motifs, n_picks, P, iterations=50, read_lengths=np.arange(2,30), uncoded=False, bec_decode=False, label=None, code_class="", ):
+def frame_error_rate(k, n, dv, dc, graph, C, symbols, motifs, n_picks, P, iterations=50, read_lengths=np.arange(8,24), uncoded=False, bec_decode=False, label=None, code_class="", ):
     """Calculates, Plots and Returns the Frame Error Rate for a given Tanner Graph over the Read lengths
     
     Args:
@@ -436,7 +436,7 @@ def run_simulation(n_motifs, n_picks, k, n, dv, dc, ffdim, P, L=0, M=0, code_cla
     if uncoded:
         print(frame_error_rate(k, n, dv, dc, graph, C, symbols, motifs, n_picks, P, iterations=iterations, label='Uncoded', code_class=code_class, uncoded=True))
     
-    plt.xticks(np.arange(1, 19, 1))
+    #plt.xticks(np.arange(1, 19, 1))
     plt.grid()
     plt.legend()
     plt.show()
@@ -445,8 +445,8 @@ def run_simulation(n_motifs, n_picks, k, n, dv, dc, ffdim, P, L=0, M=0, code_cla
 if __name__ == "__main__":
     n_motifs, n_picks = 8, 4
     dv, dc, ffdim = 3, 9, 67
-    k, n = 852, 1278
+    k, n = 100, 150
     L, M = 0, 0
     read_length = 6
-    P = 0.01
-    run_simulation(n_motifs, n_picks, k, n, dv, dc, ffdim, P, saved_code=True)
+    P = 0.02
+    run_simulation(n_motifs, n_picks, k, n, dv, dc, ffdim, P, saved_code=False, iterations=100)

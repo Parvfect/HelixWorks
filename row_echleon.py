@@ -8,7 +8,7 @@ from Hmatrixbaby import ParityCheckMatrix
 def len_unique_elements(arr):
     return len(set(arr))
 
-def get_H_arr(dc, dv, k, n):
+def get_H_arr(dv, dc, k, n):
     """ Gets Tanner Graph Connections for each Variable Node """
 
     # Initialize an array of size dv*n and fill it with numbers for each variable node's connections
@@ -34,11 +34,11 @@ def get_H_arr(dc, dv, k, n):
 
     return arr
 
-def get_H_Matrix(dc, dv, k, n, Harr=None):
+def get_H_Matrix(dv, dc, k, n, Harr=None):
     """ Creates the H matrix from the Variable Node Connections of the Tanner Graph """
     
     if Harr is None:
-        Harr = get_H_arr(dc, dv, k, n)
+        Harr = get_H_arr(dv, dc, k, n)
 
     # Initialize H matrix - the size is wrong will need to fix at some point
     H = np.zeros((n-k, n))
@@ -49,11 +49,11 @@ def get_H_Matrix(dc, dv, k, n, Harr=None):
 
     return H
 
-def get_H_matrix_sclpdc(dc, dv, k, n, Harr):
+def get_H_matrix_sclpdc(dv, dc, k, n, Harr):
     """ Creates the H matrix from the Variable Node Connections of the  variable Tanner Graph """
     
     if Harr is None:
-        Harr = get_H_arr(dc, dv, k, n)
+        Harr = get_H_arr(dv, dc, k, n)
 
     # Initialize H matrix - the size is wrong will need to fix at some point
     H = np.zeros((n-k, n))

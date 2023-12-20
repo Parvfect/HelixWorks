@@ -27,6 +27,27 @@ def permuter(arr, ffield, vn_value):
     
     return {(-p)%ffield for p in possibilities}
 
+def conv_circ(u, v):
+    """Perform circular convolution between u and v over GF using FFT."""
+    return np.real(np.fft.ifft(np.fft.fft(u) * np.fft.fft(v)))
+
+def perform_convolutions(arr_pd):
+    """ Combines all the Probability distributions within the array using the Convolution operator
+    
+    Args:
+        arr_pd (arr): Array of Discrete Probability Distributions
+    
+    Returns:
+        conv_pd (arr): Combined Probability Distributions after taking convolution over all of the pdf
+    """
+
+    pdf = arr_pd[0]
+
+    for i in arr_pd[1:]:
+        pdf = conv_circ(pdf, i)
+
+    return pdf
+
 class Node:
 
     def __init__(self, no_connections, identifier):
@@ -263,88 +284,45 @@ class TannerGraph:
                 if unresolved_vns ==  resolved_vns and sum([len(i) for i in decoded_values]) == len(decoded_values):
                     return np.array([i.value for i in self.vns])
             
-
-            # Need to confirm the break condition is right
-            # If we haven't increased certainty of any of the VNs as compared to the previous iteration, we break
             if sum([len(i.value) for i in self.vns]) == total_possibilites:
                 return [i.value for i in self.vns]
-
-            #if prev_resolved_vns == resolved_vns:
-            #       return [i.value for i in self.vns]
             
             total_possibilites = sum([len(i.value) for i in self.vns])
             
-            prev_resolved_vns = resolved_vns
-                
+            prev_resolved_vns = resolved_vns   
         
         return [i.value for i in self.vns]
 
 
-    def frame_error_rate(self, input_arr=None, iterations=50, plot=False, ensemble=False, establish_connections=True, label=None):
-        """ Get the FER for the Tanner Graph """
+    def qspa_decoding(self, max_iterations=10):
 
-        erasure_probabilities = np.arange(0,1,0.05)
-        frame_error_rate = []
+        # Break condition is when we get a valid codeword - could define a function for the test at each CN update or at each iteration?
         
-        # Creating an all zero vector for input in case no input is passed
-        if input_arr is None:
-            input_arr = np.zeros(self.n)
-        
-        if establish_connections:
-            self.establish_connections()
-
-        for i in tqdm(erasure_probabilities):
-            counter = 0
-            prev_error = 5
-            for j in range(iterations):
+        for i in tqdm(range(max_iterations)):
+            for i in self.cns:
                 
-                if ensemble:
-                    self.establish_connections()
+                vn_vals = self.get_cn_link_values(i)
+                
+                for j in i.links:
+                
+                    vals = vn_vals.copy()
+                    current_value = self.vns[j].value
+                    print(vals)
+                    print(current_value)
+                    vals.remove(current_value)
+                    
+                    # Perform convolution over the other vn values
+                    pdf = perform_convolutions(vals)
+                    # Perform convolution to update the VN value - not sure about sign and ffield update consideration
+                    new_pdf = conv_circ(pdf, current_value)
+                    # Assign new VN value
+                    self.vns[j].value = new_pdf
+                
+            # Break condition check - could make it a post VN check
+            #max_prob_codeword = get_max_prob_codeword()
+            #if validate_codeword(max_prob_codeword):
+            #    return max_prob_codeword
+            
+        return [] # Need to change this to the max prob codeword
 
-                # Assigning values to Variable Nodes after generating erasures in zero array
-                self.assign_values(generate_erasures(input_arr, i))
-
-                # Getting the average error rates for iteration runs
-                if np.all(self.bec_decode() == input_arr):
-                    counter += 1    
-
-            # Calculate Error Rate and append to list
-            error_rate = (iterations - counter)/iterations
-            frame_error_rate.append(error_rate)
-        
-        if plot:
-            plt.plot(erasure_probabilities, frame_error_rate, label = "({},{}) {}".format(self.k, self.n, label))
-            plt.title("Frame Error Rate for BEC for {}-{}  {}-{} LDPC Code".format(self.k, self.n, self.dv, self.dc))
-            plt.ylabel("Frame Error Rate")
-            plt.xlabel("Erasure Probability")
-
-            # Displaying final figure
-            plt.legend()
-            plt.ylim(0,1)
-            plt.show()
-
-        return frame_error_rate
-
-
-def test():
-     with Profile() as profile:
-        dv, dc, k, n = 3, 6, 1000,
-        2000
-        t = TannerGraph(dv, dc, k, n)
-        t.frame_error_rate(plot=True, ensemble=False)
-        
-        # Get the Threshold
-        threshold = threshold_binary_search(dv, dc)
-        plt.axvline(x=threshold, color='r', linestyle='--', label="Threshold")
-
-        
-        plt.show()
-        (
-            Stats(profile)
-            .strip_dirs()
-            .sort_stats("cumtime")
-            .print_stats(10)
-        )
-
-if __name__ == "__main__":
-    test_arr = [[0], [3], [2], [0], [3], [2], [2, 4], [2, 4], [0, 1, 2], [0]]
+        return [i.value for i in self.vns]
