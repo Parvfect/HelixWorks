@@ -76,8 +76,8 @@ def simulate(Harr, GFH, GFK, symbols, P, read_length=10, max_iter=10):
     ffdim = 67
     n_motifs, n_picks = 8, 4
     dv, dc = 3, 9
-    n_code = 150
-    k = 100
+    n_code = 15
+    k = 10
     
     m_checks = GFH.shape[0]
 
@@ -98,8 +98,8 @@ def simulate(Harr, GFH, GFK, symbols, P, read_length=10, max_iter=10):
     graph = TannerGraph(dv, dc,k, n_code, ffdim=ffdim)
     graph.establish_connections(Harr)
     graph.assign_values(symbol_likelihoods_arr)
-    C = graph.qspa_decoding()
-    print(C)
+    z = graph.qspa_decoding(GFH, GF)
+    print(z)
     
     return np.array_equal(C, z)
 
@@ -108,8 +108,8 @@ def fer(P, iterations=10, read_lengths=np.arange(8,24), max_iter=10):
     ffdim = 67
     n_motifs, n_picks = 8, 4
     dv, dc = 3, 9
-    n_code = 150
-    k = 100
+    n_code = 15
+    k = 10
     
     Harr = r.get_H_arr(dv, dc, k, n_code)
     H = np.array(r.get_H_Matrix(dv, dc, k, n_code, Harr), dtype=int)

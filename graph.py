@@ -293,10 +293,36 @@ class TannerGraph:
         
         return [i.value for i in self.vns]
 
+    def get_max_prob_codeword(self):
+        """Returns the most possible Codeword using the probability likelihoods established in the VN's
 
-    def qspa_decoding(self, max_iterations=10):
+        Returns:
+            codeword (arr): n length codeword with symbols
+        """
 
-        # Break condition is when we get a valid codeword - could define a function for the test at each CN update or at each iteration?
+        codeword = np.zeros(len(self.vns))
+        for i in range(len(self.vns)):
+            vn_value = self.vns[i].value
+            max_prob_symbol = list(vn_value).index(max(vn_value))
+            codeword[i] = max_prob_symbol
+        
+        return codeword
+
+    def validate_codeword(self, H, GF, max_prob_codeword):
+        """ Checks if the most probable codeword is valid as a termination condition of qspa decoding """
+        return not np.matmul(H, GF(max_prob_codeword.astype(int))).any()
+
+    def remove_from_array(self, vals, current_value):
+        """ Removes current value from vals"""
+
+        new_vals = []
+        for i in range(len(vals)):
+            if (current_value == vals[i]).all():
+                return new_vals + vals[i:]
+            new_vals.append(vals[i])
+        return new_vals 
+
+    def qspa_decoding(self, H, GF, max_iterations=10):
         
         for i in tqdm(range(max_iterations)):
             for i in self.cns:
@@ -307,11 +333,11 @@ class TannerGraph:
                 
                     vals = vn_vals.copy()
                     current_value = self.vns[j].value
-                    print(vals)
-                    print(current_value)
-                    vals.remove(current_value)
+                    # Problem area 1 -> removal element
+                    vals = self.remove_from_array(vals, current_value)                    
                     
                     # Perform convolution over the other vn values
+                    # Problem area 2 -> convolutions
                     pdf = perform_convolutions(vals)
                     # Perform convolution to update the VN value - not sure about sign and ffield update consideration
                     new_pdf = conv_circ(pdf, current_value)
@@ -319,10 +345,8 @@ class TannerGraph:
                     self.vns[j].value = new_pdf
                 
             # Break condition check - could make it a post VN check
-            #max_prob_codeword = get_max_prob_codeword()
-            #if validate_codeword(max_prob_codeword):
-            #    return max_prob_codeword
-            
-        return [] # Need to change this to the max prob codeword
+            max_prob_codeword = self.get_max_prob_codeword()
+            if self.validate_codeword(H, GF, max_prob_codeword):
+                return max_prob_codeword
 
-        return [i.value for i in self.vns]
+        return self.get_max_prob_codeword()
