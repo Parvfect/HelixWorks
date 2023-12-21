@@ -165,14 +165,23 @@ class QSPADecoder:
         S_ = np.zeros(shape=(self.m, self.n, self.GF.order))
         for i in range(self.m):
             idxs = self.nonzero_cols[i]
+
             for j in idxs:
+
+                # Remove val equivalent
                 conv_idxs = idxs[idxs != j]
+
+                # For some reason does first convolution
                 aux = self._conv_circ(
                     Q_[i, conv_idxs[0], :],
                     Q_[i, conv_idxs[1], :]
                 )
+
+                # Rest of the convolutions
                 for t in conv_idxs[2:]:
                     aux = self._conv_circ(aux, Q_[i, t, :])
+                
+                # Seems to shuffle something?
                 S_[i, j, :] = aux[self.idx_shuffle]
 
         S = self._shift_S_msgs(S, S_)
@@ -180,6 +189,8 @@ class QSPADecoder:
 
     def update_Q_msgs(self, P, Q, S):
         """Update Q messages following algorithm in [1]."""
+
+        # Got to understand the parity equivalent
         for a in range(self.GF.order):
             for j in range(self.n):
                 idxs = self.nonzero_rows[j]

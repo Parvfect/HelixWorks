@@ -71,13 +71,13 @@ def simulate_reads(C, symbols, read_length, P, n_motifs, n_picks):
 
     return likelihood_arr
 
-def simulate(Harr, GFH, GFK, symbols, P, read_length=10, max_iter=10):
+def simulate(Harr, GFH, GFK, symbols, P, read_length=10, max_iter=10, cc=False):
 
     ffdim = 67
     n_motifs, n_picks = 8, 4
     dv, dc = 3, 9
-    n_code = 15
-    k = 10
+    n_code = 150
+    k = 100
     
     m_checks = GFH.shape[0]
 
@@ -89,27 +89,27 @@ def simulate(Harr, GFH, GFK, symbols, P, read_length=10, max_iter=10):
     symbol_likelihoods_arr = np.array(simulate_reads(C, symbols, read_length, P, n_motifs, n_picks))
     
     assert symbol_likelihoods_arr.shape == (n_code, ffdim)
-
-    #decoder = QSPADecoder(n_code, m_checks, GF, GFH)
-    # Will have to replace that max Iter with the break condition that we had before
-    #z = decoder.decode(symbol_likelihoods_arr, max_iter=max_iter)
     
-
-    graph = TannerGraph(dv, dc,k, n_code, ffdim=ffdim)
-    graph.establish_connections(Harr)
-    graph.assign_values(symbol_likelihoods_arr)
-    z = graph.qspa_decoding(GFH, GF)
-    print(z)
-    
+    if cc:
+        graph = TannerGraph(dv, dc,k, n_code, ffdim=ffdim)
+        graph.establish_connections(Harr)
+        graph.assign_values(symbol_likelihoods_arr)
+        z = graph.coupon_collector_decoding()
+    else:
+        decoder = QSPADecoder(n_code, m_checks, GF, GFH)
+        # Will have to replace that max Iter with the break condition that we had before
+        z = decoder.decode(symbol_likelihoods_arr, max_iter=max_iter)
+        
     return np.array_equal(C, z)
 
-def fer(P, iterations=10, read_lengths=np.arange(8,24), max_iter=10):
+
+def fer(P, iterations=10, read_lengths=np.arange(8,24), max_iter=10, cc_decoding=False):
     
     ffdim = 67
     n_motifs, n_picks = 8, 4
     dv, dc = 3, 9
-    n_code = 15
-    k = 10
+    n_code = 150
+    k = 100
     
     Harr = r.get_H_arr(dv, dc, k, n_code)
     H = np.array(r.get_H_Matrix(dv, dc, k, n_code, Harr), dtype=int)
@@ -123,20 +123,27 @@ def fer(P, iterations=10, read_lengths=np.arange(8,24), max_iter=10):
     for i in tqdm(read_lengths):
         counter=0
         for j in tqdm(range(iterations)):
-            if simulate(Harr, GFH, GFK, symbols, P, i, max_iter):
+            if cc_decoding:
+                flag = simulate(Harr, GFH, GFK, symbols, P, i, max_iter, cc=True)
+            else:
+                flag = simulate(Harr, GFH, GFK, symbols, P, i, max_iter)
+            
+            if flag:
                 counter += 1
         fers.append((iterations - counter)/iterations)
     
     print(fers)
-    plt.plot(read_lengths, fers)
+    plt.plot(read_lengths, fers, label="QSPA Decoding")
     plt.title(f"FER for DCC Decoder for P={P}")
     plt.xlabel("Read Lengths")
     plt.ylabel("FER")
-    plt.show()
 
 
-P = 0
+P = 0.02
 iterations = 5
-read_lengths = np.arange(3, 15)
+read_lengths = np.arange(5, 20)
 max_iter=20
 fer(P, iterations, read_lengths, max_iter)
+fer(P, iterations, read_lengths, max_iter, cc_decoding=True)
+plt.label()
+plt.show()

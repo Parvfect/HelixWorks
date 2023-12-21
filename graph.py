@@ -318,7 +318,7 @@ class TannerGraph:
         new_vals = []
         for i in range(len(vals)):
             if (current_value == vals[i]).all():
-                return new_vals + vals[i:]
+                return [*new_vals, *vals[i:]]
             new_vals.append(vals[i])
         return new_vals 
 
@@ -333,14 +333,18 @@ class TannerGraph:
                 
                     vals = vn_vals.copy()
                     current_value = self.vns[j].value
-                    # Problem area 1 -> removal element
                     vals = self.remove_from_array(vals, current_value)                    
                     
                     # Perform convolution over the other vn values
                     # Problem area 2 -> convolutions
                     pdf = perform_convolutions(vals)
                     # Perform convolution to update the VN value - not sure about sign and ffield update consideration
+                    # Not sure if we convolute again or just straight update 
+                    # Also need to check if it's normalized
                     new_pdf = conv_circ(pdf, current_value)
+                    if sum(new_pdf)!>=0.99 and < 1.01:
+                        norm_factor = sum(new_pdf)
+                        new_pdf = [i/norm_factor for i in new_pdf]
                     # Assign new VN value
                     self.vns[j].value = new_pdf
                 
