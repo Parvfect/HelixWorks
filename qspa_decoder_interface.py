@@ -94,7 +94,8 @@ def simulate(Harr, GFH, GFK, symbols, P, read_length=10, max_iter=10, cc=False):
         graph = TannerGraph(dv, dc,k, n_code, ffdim=ffdim)
         graph.establish_connections(Harr)
         graph.assign_values(symbol_likelihoods_arr)
-        z = graph.coupon_collector_decoding()
+        #z = graph.coupon_collector_decoding()
+        z = graph.qspa_decoding(GFH, GF)
     else:
         decoder = QSPADecoder(n_code, m_checks, GF, GFH)
         # Will have to replace that max Iter with the break condition that we had before
@@ -103,7 +104,7 @@ def simulate(Harr, GFH, GFK, symbols, P, read_length=10, max_iter=10, cc=False):
     return np.array_equal(C, z)
 
 
-def fer(P, iterations=10, read_lengths=np.arange(8,24), max_iter=10, cc_decoding=False):
+def fer(P, iterations=10, read_lengths=np.arange(8,24), max_iter=10, cc_decoding=False, label=None):
     
     ffdim = 67
     n_motifs, n_picks = 8, 4
@@ -133,17 +134,17 @@ def fer(P, iterations=10, read_lengths=np.arange(8,24), max_iter=10, cc_decoding
         fers.append((iterations - counter)/iterations)
     
     print(fers)
-    plt.plot(read_lengths, fers, label="QSPA Decoding")
+    plt.plot(read_lengths, fers, label=label)
     plt.title(f"FER for DCC Decoder for P={P}")
     plt.xlabel("Read Lengths")
     plt.ylabel("FER")
 
 
-P = 0.02
+P = 0
 iterations = 5
 read_lengths = np.arange(5, 20)
 max_iter=20
-fer(P, iterations, read_lengths, max_iter)
-fer(P, iterations, read_lengths, max_iter, cc_decoding=True)
-plt.label()
+#fer(P, iterations, read_lengths, max_iter)
+fer(P, iterations, read_lengths, max_iter, cc_decoding=True, label="CC")
+plt.legend()
 plt.show()

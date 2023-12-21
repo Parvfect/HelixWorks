@@ -327,7 +327,7 @@ def run_singular_decoding(graph, C, read_length, symbols, motifs, n_picks, P):
         return False
 
 
-def frame_error_rate(k, n, dv, dc, graph, C, symbols, motifs, n_picks, P, iterations=50, read_lengths=np.arange(8,24), uncoded=False, bec_decode=False, label=None, code_class="", ):
+def frame_error_rate(k, n, dv, dc, graph, C, symbols, motifs, n_picks, P, iterations=50, read_lengths=np.arange(5,20), uncoded=False, bec_decode=False, label=None, code_class="", ):
     """Calculates, Plots and Returns the Frame Error Rate for a given Tanner Graph over the Read lengths
     
     Args:
@@ -385,7 +385,7 @@ def frame_error_rate(k, n, dv, dc, graph, C, symbols, motifs, n_picks, P, iterat
     plt.xlabel("Read Length")
 
     # Displaying final figure
-    plt.xlim(1,19)
+    plt.xlim(read_lengths[0], read_lengths[-1])
     plt.ylim(0,1)
 
     return frame_error_rate
@@ -449,4 +449,4 @@ if __name__ == "__main__":
     L, M = 0, 0
     read_length = 6
     P = 0.02
-    run_simulation(n_motifs, n_picks, k, n, dv, dc, ffdim, P, saved_code=False, iterations=100)
+    run_simulation(n_motifs, n_picks, k, n, dv, dc, ffdim, P, saved_code=False, iterations=1000)

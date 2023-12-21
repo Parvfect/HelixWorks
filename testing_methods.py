@@ -7,15 +7,19 @@ def remove_from_array(vals, current_value):
 
         new_vals = []
         for i in range(len(vals)):
-            if (current_value == vals[i]).all():
-                return [*new_vals, *vals[i:]]
+            if np.array_equal(vals[i], current_value):
+                continue
             new_vals.append(vals[i])
         return new_vals 
 
 
 
-index = 3
+index = 4
 t = np.random.rand(5)
 s = t[index]
+y = t.copy()
 
-print(remove_from_array(t, s) == [*t[:index], *t[index:]])
+print(t)
+print(s)
+print(y)
+print(remove_from_array(t, s))

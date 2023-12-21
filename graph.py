@@ -11,6 +11,7 @@ from cProfile import Profile
 from density_evolution import threshold_binary_search
 from pstats import Stats
 import re
+import sys
 
 def permuter(arr, ffield, vn_value):
 
@@ -266,8 +267,8 @@ class TannerGraph:
                 
                     vals = vn_vals.copy()
                     current_value = self.vns[j].value
-                    vals.remove(current_value)
-                    
+                    vals = self.remove_from_array(vals, current_value)
+
                     possibilites = permuter(vals, self.ffdim, current_value)
                     new_values = set(current_value).intersection(set(possibilites))
                     self.vns[j].value = list(new_values)
@@ -317,14 +318,14 @@ class TannerGraph:
 
         new_vals = []
         for i in range(len(vals)):
-            if (current_value == vals[i]).all():
-                return [*new_vals, *vals[i:]]
+            if np.array_equal(vals[i], current_value):
+                continue
             new_vals.append(vals[i])
         return new_vals 
 
     def qspa_decoding(self, H, GF, max_iterations=10):
         
-        for i in tqdm(range(max_iterations)):
+        for i in range(max_iterations):
             for i in self.cns:
                 
                 vn_vals = self.get_cn_link_values(i)
@@ -333,7 +334,7 @@ class TannerGraph:
                 
                     vals = vn_vals.copy()
                     current_value = self.vns[j].value
-                    vals = self.remove_from_array(vals, current_value)                    
+                    vals = self.remove_from_array(vals, current_value)         
                     
                     # Perform convolution over the other vn values
                     # Problem area 2 -> convolutions
@@ -341,9 +342,11 @@ class TannerGraph:
                     # Perform convolution to update the VN value - not sure about sign and ffield update consideration
                     # Not sure if we convolute again or just straight update 
                     # Also need to check if it's normalized
-                    new_pdf = conv_circ(pdf, current_value)
-                    if sum(new_pdf)!>=0.99 and < 1.01:
-                        norm_factor = sum(new_pdf)
+                    #new_pdf = conv_circ(pdf, current_value)
+                    new_pdf = pdf
+
+                    norm_factor = sum(new_pdf)
+                    if not(norm_factor >=0.99 and norm_factor < 1.01):
                         new_pdf = [i/norm_factor for i in new_pdf]
                     # Assign new VN value
                     self.vns[j].value = new_pdf
