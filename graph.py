@@ -118,6 +118,7 @@ class TannerGraph:
                 self.vns[i].add_link(self.cns[k])
                 self.cns[k].add_link(self.vns[i])
 
+
     def get_connections(self):
         """ Returns the connections in the Tanner Graph """
         return [(i.identifier, j) for i in self.cns for j in i.links]
@@ -325,31 +326,43 @@ class TannerGraph:
 
     def qspa_decoding(self, H, GF, max_iterations=10):
         
+        # Additive inverse of GF Field
+        idx_shuffle = np.array([
+            (GF.order - a) % GF.order for a in range(GF.order)
+        ])
+        
+        # Initial likelihoods
+        P = [i.value for i in self.vns]
+
         for i in range(max_iterations):
+            # VN Update
             for i in self.cns:
-                
                 vn_vals = self.get_cn_link_values(i)
-                
                 for j in i.links:
-                
                     vals = vn_vals.copy()
                     current_value = self.vns[j].value
-                    vals = self.remove_from_array(vals, current_value)         
-                    
-                    # Perform convolution over the other vn values
-                    # Problem area 2 -> convolutions
+                    vals = self.remove_from_array(vals, current_value)        
                     pdf = perform_convolutions(vals)
-                    # Perform convolution to update the VN value - not sure about sign and ffield update consideration
-                    # Not sure if we convolute again or just straight update 
-                    # Also need to check if it's normalized
-                    #new_pdf = conv_circ(pdf, current_value)
-                    new_pdf = pdf
+                    self.vns[j].value = pdf[idx_shuffle]
+                
+            # Check for max prob codeword and parity
 
-                    norm_factor = sum(new_pdf)
-                    if not(norm_factor >=0.99 and norm_factor < 1.01):
-                        new_pdf = [i/norm_factor for i in new_pdf]
-                    # Assign new VN value
-                    self.vns[j].value = new_pdf
+            # CN Update
+            for a in range(GF.order):
+                for j in self.vns:
+                    idxs = self.nonzero_rows[j]
+                    for i in idxs:
+                        # Initial Liklihoods
+                        Q[i, j, a] = 1 * P[j, a]
+
+                        # Don't understand this step - has to do with CN update
+                        for t in idxs[idxs != i]:
+                            Q[i, j, a] *= S[t, j, a]
+
+                        # Normalization
+                        Q[i, j, :] /= sum(Q[i, j, :])
+            return Q
+
                 
             # Break condition check - could make it a post VN check
             max_prob_codeword = self.get_max_prob_codeword()

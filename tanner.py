@@ -6,6 +6,7 @@ from networkx.algorithms import bipartite
 import networkx as nx
 import matplotlib.pyplot as plt
 import time
+import row_echleon as r
 from bec import generate_erasures
 from tqdm import tqdm
 from cProfile import Profile
@@ -28,6 +29,29 @@ def permuter(arr, ffield, vn_value):
         new_possibilities = set()
     
     return {(-p)%ffield for p in possibilities}
+
+
+def conv_circ(u, v):
+    """Perform circular convolution between u and v over GF using FFT."""
+    return np.real(np.fft.ifft(np.fft.fft(u) * np.fft.fft(v)))
+
+def perform_convolutions(arr_pd):
+    """ Combines all the Probability distributions within the array using the Convolution operator
+    
+    Args:
+        arr_pd (arr): Array of Discrete Probability Distributions
+    
+    Returns:
+        conv_pd (arr): Combined Probability Distributions after taking convolution over all of the pdf
+    """
+
+    pdf = arr_pd[0]
+
+    for i in arr_pd[1:]:
+        pdf = conv_circ(pdf, i)
+
+    return pdf
+
 
 class Node:
 
@@ -68,6 +92,13 @@ class VariableNode(Node):
     def __init__(self, dv, identifier):
         super().__init__(dv, identifier)
 
+
+class Link(Node):
+    def __init__(self, cn, vn, value):
+        self.cn = cn
+        self.vn = vn
+        self.value = value
+
 class VariableTannerGraph:
     """ Initializes empty, on establishing connections creates H and forms links """
 
@@ -90,13 +121,30 @@ class VariableTannerGraph:
         self.k = k
         self.n = n
         self.ffdim = ffdim
+        self.links = {}
+
+    def add_link(self, cn_index, vn_index, link_value):
+        """ Adds a link to the links data structure """
+        self.links[(cn_index, vn_index)] = link_value
+    
+    def update_link_weight(self, cn_index, vn_index, link_value):
+        """ Updates Link weight """
+        self.add_link(cn_index, vn_index, link_value)
+    
+    def get_link_weight(self, cn_index, vn_index):
+        """ Get Link Weight """
+        return self.links[(cn_index, vn_index)]
+    
+    def update_within_link_weight(self, cn_index, vn_index, val_index, new_value):
+        self.links[(cn_index, vn_index)][val_index] = new_value
 
     def establish_connections(self, Harr=None):
         """ Establishes connections between variable nodes and check nodes """
         
         # In case Harr is sent as a parameter
         if Harr is None:
-            self.Harr = get_Harr()
+            # If we are creating, assuming it's not scldpc - really needs some unification here champ
+            self.Harr = r.get_H_arr(self.dv[0], self.dc[0], self.k, self.n)
         else:
             self.Harr = np.array(Harr)
 
@@ -107,13 +155,21 @@ class VariableTannerGraph:
         # But dv is a list in the case of the changing case
         # All the dvs are the same for this case
         dv = self.dv[0]
+
+        if len(np.unique(self.dc)) == 1:
+            Harr = Harr // self.dc[0]
+        
         Harr = [Harr[i:i+dv] for i in range(0, len(Harr), dv)]
+
+        # Checking for spatially coupled
+        
         
         # Establish connections
         for (i,j) in enumerate(Harr):
             for k in j:
                 self.vns[i].add_link(self.cns[k])
                 self.cns[k].add_link(self.vns[i])
+                self.add_link(k, i, 0)
 
     def get_connections(self):
         """ Returns the connections in the Tanner Graph """
@@ -298,56 +354,82 @@ class VariableTannerGraph:
         
         return [i.value for i in self.vns]
 
+    def get_max_prob_codeword(self):
+        """Returns the most possible Codeword using the probability likelihoods established in the VN's
 
-    def frame_error_rate(self, input_arr=None, iterations=50, plot=False, ensemble=False, establish_connections=True, label=None):
-        """ Get the FER for the Tanner Graph """
+        Returns:
+            codeword (arr): n length codeword with symbols
+        """
 
-        erasure_probabilities = np.arange(0,1,0.05)
-        frame_error_rate = []
+        codeword = np.zeros(len(self.vns))
+        for i in range(len(self.vns)):
+            vn_value = self.vns[i].value
+            max_prob_symbol = list(vn_value).index(max(vn_value))
+            codeword[i] = max_prob_symbol
         
-        # Creating an all zero vector for input in case no input is passed
-        if input_arr is None:
-            input_arr = np.zeros(self.n)
-        
-        if establish_connections:
-            self.establish_connections()
+        return codeword
 
-        for i in tqdm(erasure_probabilities):
-            counter = 0
-            prev_error = 5
-            for j in range(iterations):
+    def validate_codeword(self, H, GF, max_prob_codeword):
+        """ Checks if the most probable codeword is valid as a termination condition of qspa decoding """
+        return not np.matmul(H, GF(max_prob_codeword.astype(int))).any()
+
+    def remove_from_array(self, vals, current_value):
+        """ Removes current value from vals"""
+
+        new_vals = []
+        for i in range(len(vals)):
+            if np.array_equal(vals[i], current_value):
+                continue
+            new_vals.append(vals[i])
+        return new_vals 
+
+    def qspa_decoding(self, H, GF, max_iterations=10):
+        
+        # Additive inverse of GF Field
+        idx_shuffle = np.array([
+            (GF.order - a) % GF.order for a in range(GF.order)
+        ])
+        
+        # Initial likelihoods
+        P = [i.value for i in self.vns]
+
+        for i in range(max_iterations):
+            # VN Update
+            for i in self.cns:
+                vn_vals = self.get_cn_link_values(i)
+                for j in i.links:
+                    vals = vn_vals.copy()
+                    current_value = self.vns[j].value
+                    vals = self.remove_from_array(vals, current_value)        
+                    pdf = perform_convolutions(vals)
+                    self.vns[j].value = pdf[idx_shuffle]
                 
-                if ensemble:
-                    self.establish_connections()
+            # Check for max prob codeword and parity
+            max_prob_codeword = get_max_prob_codeword()
+            
+            if parity:
+                return max_prob_codeword
 
-                # Assigning values to Variable Nodes after generating erasures in zero array
-                self.assign_values(generate_erasures(input_arr, i))
+            # CN Update
+            for a in range(GF.order):
+                for j in self.vns:
+                    idxs = self.nonzero_rows[j]
+                    for i in idxs:
+                        # Initial Liklihoods
+                        self.update_within_link_weight(i,j,a,P[j,a])
 
-                # Getting the average error rates for iteration runs
-                if np.all(self.bec_decode() == input_arr):
-                    counter += 1    
+                        # Don't understand this step - has to do with CN update
+                        # Is this all the links of the VN? 
+                        # can do something like - 
+                        # self.vn.links - and cn fixed and acc self.cn.links and vn fixed whatever, can use to access back and forth
+                        for t in self.cns:
+                            self.links[(i,j)][a] *= self.vns[t].value[a]
 
-            # Calculate Error Rate and append to list
-            error_rate = (iterations - counter)/iterations
-            frame_error_rate.append(error_rate)
-        
-        if plot:
-            plt.plot(erasure_probabilities, frame_error_rate, label = "({},{}) {}".format(self.k, self.n, label))
-            plt.title("Frame Error Rate for BEC for {}-{}  {}-{} LDPC Code".format(self.k, self.n, self.dv, self.dc))
-            plt.ylabel("Frame Error Rate")
-            plt.xlabel("Erasure Probability")
-
-            # Displaying final figure
-            plt.legend()
-            plt.ylim(0,1)
-            plt.show()
-
-        return frame_error_rate
-
-
-if __name__ == "__main__":
-    """
-    Harr, dc, dv, k, n = get_Harr()   
-    graph = TannerGraph(dv, dc, k, n)
-    graph.establish_connections(Harr)
-    """
+                        # Normalization
+                        val = self.get_link_weight(i,j)
+                        norm_factor = sum(val)
+                        normalized_value = [i/norm_factor for i in val]
+                        self.update_link_weight(i,j, normalized_value)
+            
+            if iterations > max_iterations:
+                return max_prob_codeword

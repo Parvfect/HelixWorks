@@ -71,13 +71,11 @@ def simulate_reads(C, symbols, read_length, P, n_motifs, n_picks):
 
     return likelihood_arr
 
-def simulate(Harr, GFH, GFK, symbols, P, read_length=10, max_iter=10, cc=False):
+def simulate(Harr, GFH, GFK, symbols, P, n_code, k, read_length=10, max_iter=10, cc=False):
 
     ffdim = 67
     n_motifs, n_picks = 8, 4
     dv, dc = 3, 9
-    n_code = 150
-    k = 100
     
     m_checks = GFH.shape[0]
 
@@ -104,13 +102,12 @@ def simulate(Harr, GFH, GFK, symbols, P, read_length=10, max_iter=10, cc=False):
     return np.array_equal(C, z)
 
 
-def fer(P, iterations=10, read_lengths=np.arange(8,24), max_iter=10, cc_decoding=False, label=None):
+def fer(P, n_code, k, iterations=10, read_lengths=np.arange(8,24), max_iter=10, cc_decoding=False, label=None):
     
     ffdim = 67
     n_motifs, n_picks = 8, 4
     dv, dc = 3, 9
-    n_code = 150
-    k = 100
+    
     
     Harr = r.get_H_arr(dv, dc, k, n_code)
     H = np.array(r.get_H_Matrix(dv, dc, k, n_code, Harr), dtype=int)
@@ -125,9 +122,9 @@ def fer(P, iterations=10, read_lengths=np.arange(8,24), max_iter=10, cc_decoding
         counter=0
         for j in tqdm(range(iterations)):
             if cc_decoding:
-                flag = simulate(Harr, GFH, GFK, symbols, P, i, max_iter, cc=True)
+                flag = simulate(Harr, GFH, GFK, symbols, P, n_code, k, i, max_iter, cc=True)
             else:
-                flag = simulate(Harr, GFH, GFK, symbols, P, i, max_iter)
+                flag = simulate(Harr, GFH, GFK, symbols, P, n_code, k, i, max_iter)
             
             if flag:
                 counter += 1
@@ -135,16 +132,17 @@ def fer(P, iterations=10, read_lengths=np.arange(8,24), max_iter=10, cc_decoding
     
     print(fers)
     plt.plot(read_lengths, fers, label=label)
-    plt.title(f"FER for DCC Decoder for P={P}")
+    plt.title(f"FER for DCC Decoder for P={P} with codeword {n_code} and rate {n_code/k}")
     plt.xlabel("Read Lengths")
     plt.ylabel("FER")
 
 
-P = 0
-iterations = 5
-read_lengths = np.arange(5, 20)
+P = 0.02
+n_code, k = 210, 140
+iterations = 50
+read_lengths = np.arange(5, 12)
 max_iter=20
-#fer(P, iterations, read_lengths, max_iter)
-fer(P, iterations, read_lengths, max_iter, cc_decoding=True, label="CC")
+fer(P, n_code, k, iterations, read_lengths, max_iter)
+#fer(P, iterations, read_lengths, max_iter, cc_decoding=True, label="CC")
 plt.legend()
 plt.show()

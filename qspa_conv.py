@@ -160,7 +160,9 @@ class QSPADecoder:
 
     def update_S_msgs(self, Q, S):
         """Update S messages following algorithm in [1]."""
-        Q_ = self._shift_Q_msgs(Q)
+       
+        #Q_ = self._shift_Q_msgs(Q)
+        Q_ = Q
 
         S_ = np.zeros(shape=(self.m, self.n, self.GF.order))
         for i in range(self.m):
@@ -181,11 +183,11 @@ class QSPADecoder:
                 for t in conv_idxs[2:]:
                     aux = self._conv_circ(aux, Q_[i, t, :])
                 
-                # Seems to shuffle something?
+                # Becomes the additive inverse of that I is confused
                 S_[i, j, :] = aux[self.idx_shuffle]
 
-        S = self._shift_S_msgs(S, S_)
-        return S
+        #S = self._shift_S_msgs(S, S_)
+        return S_
 
     def update_Q_msgs(self, P, Q, S):
         """Update Q messages following algorithm in [1]."""
@@ -195,9 +197,14 @@ class QSPADecoder:
             for j in range(self.n):
                 idxs = self.nonzero_rows[j]
                 for i in idxs:
+                    # Initial Liklihoods
                     Q[i, j, a] = 1 * P[j, a]
+
+                    # Don't understand this step - has to do with CN update
                     for t in idxs[idxs != i]:
                         Q[i, j, a] *= S[t, j, a]
+
+                    # Normalization
                     Q[i, j, :] /= sum(Q[i, j, :])
         return Q
 
