@@ -221,163 +221,26 @@ class VariableTannerGraph:
         for i in range(len(arr)):
             self.vns[i].value = arr[i]
 
-    def bec_decode(self, max_iterations=100):
-        """ Assuming VNs have been initialized with values, perform BEC decoding """
-
-        filled_vns = sum([1 for i in self.vns if not np.isnan(i.value)])
-        resolved_vns = 0
-
-        for iteration in range(max_iterations):
-            
-            # For each check node  
-            for (i,j) in enumerate(self.cns):
-                # See all connection VN values
-                erasure_counter = 0
-                # Counting number of erasures
-                for k in j.links:
-                    if np.isnan(self.vns[int(k)].value):
-                        erasure_counter += 1
-                
-                # If Erasure counter is equal to 1, fill erasure
-                if erasure_counter == 1:
-                    sum_links = 0
-                    erasure_index = 0
-                    
-                    for k in j.links:
-                        # Collect all values in an array
-                        if np.isnan(self.vns[int(k)].value):
-                            #sum_links += self.vns[int(k)].value
-                            erasure_index = k
-                        else:
-                            #erasure_index = k
-                            sum_links += self.vns[int(k)].value
-                            
-                    
-                    # Replace erasure with sum modulo 2
-                    self.vns[int(erasure_index)].value = sum_links % 2
-                    resolved_vns+=1
-            
-            # Check in every iteration - otherwise it will be too slow
-            if filled_vns+resolved_vns == self.n:
-                return np.array([i.value for i in self.vns])
-
-
-        return np.array([i.value for i in self.vns])
-    
-    def coupon_collector_erasure_decoder(self, max_iterations=100):
-        """ Belief Propagation decoding for the general case (currently only works for BEC) )"""
-
-        unresolved_vns = sum([1 for i in self.vns if len(i.value) > 1 ])
-        resolved_vns = 0
-        prev_resolved_vns = 0
-        
-        for iteration in range(max_iterations):
-            
-            for i in self.cns:
-                for j in i.links:
-                    sum_vns = 0
-                    uncertainty_check = False
-                    
-                    for k in i.links:
-                        if k != j:
-                            if not type(self.vns[k].value) == int:
-                                if len(self.vns[k].value) > 1:
-                                    uncertainty_check = True
-                                    break
-                            if type(self.vns[k].value) == int:
-                                sum_vns += self.vns[k].value    
-                            else:
-                                sum_vns += self.vns[k].value[0]
-                    
-                    if uncertainty_check:
-                        continue
-                    
-                    if len(self.vns[k].value) > 1:
-                        resolved_vns += 1    
-                    
-                    self.vns[j].value = [-sum_vns % self.ffdim]  
-
-                if unresolved_vns == resolved_vns:
-                    return np.array([i.value for i in self.vns])
-            
-            if prev_resolved_vns == resolved_vns:
-                    return [i.value for i in self.vns]
-            prev_resolved_vns = resolved_vns
-            
-        return np.array([i.value for i in self.vns])
-
-
-    def coupon_collector_decoding(self):
-        """ Decodes for the case of symbol possiblities for each variable node 
-            utilising Belief Propagation - may be worth doing for BEC as well 
-        """
-        
-        unresolved_vns = sum([1 for i in self.vns if len(i.value) > 1 ])
-        resolved_vns = 0
-        total_possibilites = sum([len(i.value) for i in self.vns])
-        
-        while True:
-            # Iterating through all the check nodes
-            for i in self.cns:
-                
-                vn_vals = self.get_cn_link_values(i)
-                
-                for j in i.links:
-                
-                    vals = vn_vals.copy()
-                    current_value = self.vns[j].value
-                    vals.remove(current_value)
-                    
-                    possibilites = permuter(vals, self.ffdim, current_value)
-                    new_values = set(current_value).intersection(set(possibilites))
-                    self.vns[j].value = list(new_values)
-                    
-                    """
-                    if len(new_values) < len(current_value) and len(possibilites) > 1:
-                        print("I reached here")
-                    """
-                    if len(current_value) > 1 and len(new_values) == 1:
-                        resolved_vns += 1
-                    
-                decoded_values = [i.value for i in self.vns]
-
-                if unresolved_vns ==  resolved_vns and sum([len(i) for i in decoded_values]) == len(decoded_values):
-                    return np.array([i.value for i in self.vns])
-            
-
-            # Need to confirm the break condition is right
-            # If we haven't increased certainty of any of the VNs as compared to the previous iteration, we break
-            if sum([len(i.value) for i in self.vns]) == total_possibilites:
-                return [i.value for i in self.vns]
-
-            #if prev_resolved_vns == resolved_vns:
-            #       return [i.value for i in self.vns]
-            
-            total_possibilites = sum([len(i.value) for i in self.vns])
-            
-            prev_resolved_vns = resolved_vns
-                
-        
-        return [i.value for i in self.vns]
-
     def get_max_prob_codeword(self):
         """Returns the most possible Codeword using the probability likelihoods established in the VN's
 
         Returns:
             codeword (arr): n length codeword with symbols
         """
+        z = np.zeros(self.n)
+        for j in range(self.n):
+            probs = 1 * P[j, :]
+            for a in range(self.GF.order):
+                for i in idxs:
+                    probs[a] *= self.get_link_weight(i, j)[a]
+            z[j] = np.argmax(probs)
+        z = self.GF(z.astype(int))
+        return z
 
-        codeword = np.zeros(len(self.vns))
-        for i in range(len(self.vns)):
-            vn_value = self.vns[i].value
-            max_prob_symbol = list(vn_value).index(max(vn_value))
-            codeword[i] = max_prob_symbol
-        
-        return codeword
 
     def validate_codeword(self, H, GF, max_prob_codeword):
         """ Checks if the most probable codeword is valid as a termination condition of qspa decoding """
-        return not np.matmul(H, GF(max_prob_codeword.astype(int))).any()
+        return not np.matmul(H, max_prob_codeword).any()
 
     def remove_from_array(self, vals, current_value):
         """ Removes current value from vals"""
@@ -408,12 +271,12 @@ class VariableTannerGraph:
                     current_value = self.get_link_weight(i.identifier, j)
                     vals = self.remove_from_array(vals, current_value)        
                     pdf = perform_convolutions(vals)
-                    self.vns[j].value = pdf[idx_shuffle]
+                    self.update_link_weight(i,j,pdf[idx_shuffle])
                 
-            # Check for max prob codeword and parity
             max_prob_codeword = get_max_prob_codeword()
             
-            if parity:
+            # Check if we have got a valid codeword
+            if self.validate_codeword(H, GF, max_prob_codeword):
                 return max_prob_codeword
 
             # CN Update
@@ -429,7 +292,6 @@ class VariableTannerGraph:
                             link_weight = self.get_link_weight(i, vn_index)
                             alternate_link_weight = self.get_link_weight(t, vn_index)
                             link_weight[a] *= alternate_link_weight[a]
-
                             self.update_within_link_weight(i, j.identifier, a, link_weight)
                             
                         # Normalization
