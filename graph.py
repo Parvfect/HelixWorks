@@ -295,7 +295,7 @@ class TannerGraph:
         
         return [i.value for i in self.vns]
 
-    def get_max_prob_codeword(self):
+        def get_max_prob_codeword(self):
         """Returns the most possible Codeword using the probability likelihoods established in the VN's
 
         Returns:
@@ -328,45 +328,57 @@ class TannerGraph:
         
         # Additive inverse of GF Field
         idx_shuffle = np.array([
-            (GF.order - a) % GF.order for a in range(GF.order)
+            (GForder - a) % GF.order for a in range(GF.order)
         ])
         
         # Initial likelihoods
         P = [i.value for i in self.vns]
 
-        for i in range(max_iterations):
-            # VN Update
+        for iterations in range(max_iterations):
+            # Iterating through all the check nodes
             for i in self.cns:
+                
                 vn_vals = self.get_cn_link_values(i)
+                
                 for j in i.links:
+                
                     vals = vn_vals.copy()
                     current_value = self.vns[j].value
-                    vals = self.remove_from_array(vals, current_value)        
-                    pdf = perform_convolutions(vals)
-                    self.vns[j].value = pdf[idx_shuffle]
+                    vals = self.remove_from_array(vals, current_value)
+
+                    pdf = perform_convolutions(vals, current_value)
+                    new_values = set(current_value).intersection(set(possibilites))
+                    self.vns[j].value = list(new_values)
+                self.vns[j].value = pdf[idx_shuffle]
                 
             # Check for max prob codeword and parity
+            max_prob_codeword = get_max_prob_codeword()
+            
+            if parity:
+                return max_prob_codeword
 
             # CN Update
             for a in range(GF.order):
                 for j in self.vns:
+                    vn_index = j.identifier
                     idxs = self.nonzero_rows[j]
-                    for i in idxs:
-                        # Initial Liklihoods
-                        Q[i, j, a] = 1 * P[j, a]
+                    for i in j.links:
+                        # Initial Likelihoods
+                        self.update_within_link_weight(i, vn_index, a, P[j,a])
 
-                        # Don't understand this step - has to do with CN update
-                        for t in idxs[idxs != i]:
-                            Q[i, j, a] *= S[t, j, a]
+                        for t in j.links[t!=i]:
+                            link_weight = self.get_link_weight(i, vn_index)
+                            alternate_link_weight = self.get_link_weight(t, vn_index)
+                            link_weight[a] *= alternate_link_weight[a]
 
+                            self.update_within_link_weight(i, j.identifier, a, link_weight)
+                            
                         # Normalization
-                        Q[i, j, :] /= sum(Q[i, j, :])
-            return Q
-
-                
-            # Break condition check - could make it a post VN check
-            max_prob_codeword = self.get_max_prob_codeword()
-            if self.validate_codeword(H, GF, max_prob_codeword):
+                        val = self.get_link_weight(i,vn_value)
+                        norm_factor = sum(val)
+                        normalized_value = [i/norm_factor for i in val]
+                        self.update_link_weight(i,j, normalized_value)
+            
+            if iterations > max_iterations:
                 return max_prob_codeword
-
-        return self.get_max_prob_codeword()
+    

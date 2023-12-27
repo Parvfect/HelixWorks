@@ -138,6 +138,12 @@ class VariableTannerGraph:
     def update_within_link_weight(self, cn_index, vn_index, val_index, new_value):
         self.links[(cn_index, vn_index)][val_index] = new_value
 
+    def get_vn_value(self, vn_index):
+        return self.vns[vn_index].value
+
+    def get_cn_value(self, cn_index):
+        return self.cns[cn_index].value
+
     def establish_connections(self, Harr=None):
         """ Establishes connections between variable nodes and check nodes """
         
@@ -176,10 +182,10 @@ class VariableTannerGraph:
         return [(i.identifier, j) for i in self.cns for j in i.links]
 
     def get_cn_link_values(self, cn):
-        """ Returns the values of the connected vns for the cn as a dd array"""
+        """ Returns the values of the link weights for the cn as an array"""
         vals = []
         for i in cn.links:
-            vals.append(self.vns[i].value)
+            vals.append(self.get_link_weight(self.cn.identifier, i))
 
         return vals
 
@@ -396,10 +402,10 @@ class VariableTannerGraph:
         for i in range(max_iterations):
             # VN Update
             for i in self.cns:
-                vn_vals = self.get_cn_link_values(i)
+                link_weights = self.get_cn_link_values(i)
                 for j in i.links:
-                    vals = vn_vals.copy()
-                    current_value = self.vns[j].value
+                    vals = link_weights.copy()
+                    current_value = self.get_link_weight(i.identifier, j)
                     vals = self.remove_from_array(vals, current_value)        
                     pdf = perform_convolutions(vals)
                     self.vns[j].value = pdf[idx_shuffle]
@@ -413,20 +419,21 @@ class VariableTannerGraph:
             # CN Update
             for a in range(GF.order):
                 for j in self.vns:
+                    vn_index = j.identifier
                     idxs = self.nonzero_rows[j]
-                    for i in idxs:
-                        # Initial Liklihoods
-                        self.update_within_link_weight(i,j,a,P[j,a])
+                    for i in j.links:
+                        # Initial Likelihoods
+                        self.update_within_link_weight(i, vn_index, a, P[j,a])
 
-                        # Don't understand this step - has to do with CN update
-                        # Is this all the links of the VN? 
-                        # can do something like - 
-                        # self.vn.links - and cn fixed and acc self.cn.links and vn fixed whatever, can use to access back and forth
-                        for t in self.cns:
-                            self.links[(i,j)][a] *= self.vns[t].value[a]
+                        for t in j.links[t!=i]:
+                            link_weight = self.get_link_weight(i, vn_index)
+                            alternate_link_weight = self.get_link_weight(t, vn_index)
+                            link_weight[a] *= alternate_link_weight[a]
 
+                            self.update_within_link_weight(i, j.identifier, a, link_weight)
+                            
                         # Normalization
-                        val = self.get_link_weight(i,j)
+                        val = self.get_link_weight(i,vn_value)
                         norm_factor = sum(val)
                         normalized_value = [i/norm_factor for i in val]
                         self.update_link_weight(i,j, normalized_value)
