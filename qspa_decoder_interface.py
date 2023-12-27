@@ -84,6 +84,7 @@ def simulate(Harr, GFH, GFK, symbols, P, n_code, k, read_length=10, max_iter=10,
 
     input_arr = [random.randint(0,66) for i in range(k)]
     C = np.matmul(GF(input_arr), GFK)
+    print(f"Codeword is \n{C}")
 
     symbol_likelihoods_arr = np.array(simulate_reads(C, symbols, read_length, P, n_motifs, n_picks))
     
@@ -141,7 +142,7 @@ def fer(P, n_code, k, iterations=10, read_lengths=np.arange(8,24), max_iter=10, 
 P = 0.02
 n_code, k = 150, 100
 iterations = 5
-read_lengths = np.arange(5, 12)
+read_lengths = np.arange(12, 15)
 max_iter=20
 #fer(P, n_code, k, iterations, read_lengths, max_iter)
 fer(P, n_code, k, iterations, read_lengths, max_iter, cc_decoding=True, label="CC")

@@ -234,14 +234,13 @@ class VariableTannerGraph:
             for a in range(GF.order):
                 for i in j.links:
                     probs[a] *= self.get_link_weight(i, vn_index)[a]
-            z[vn_index] = np.argmax(probs)
+            z[vn_index] = np.argmax(probs) 
         z = GF(z.astype(int))
         return z
 
 
     def validate_codeword(self, H, GF, max_prob_codeword):
         """ Checks if the most probable codeword is valid as a termination condition of qspa decoding """
-        print(np.matmul(H, max_prob_codeword))
         return not np.matmul(H, max_prob_codeword).any()
 
     def remove_from_array(self, vals, current_value):
@@ -254,7 +253,7 @@ class VariableTannerGraph:
             new_vals.append(vals[i])
         return new_vals 
 
-    def qspa_decoding(self, H, GF, max_iterations=10):
+    def qspa_decoding(self, H, GF, max_iterations=20):
         
         # Additive inverse of GF Field
         idx_shuffle = np.array([
@@ -264,13 +263,18 @@ class VariableTannerGraph:
         # Initial likelihoods
         P = [i.value for i in self.vns]
 
-        # Initialize messages
+        # Initialize messages - set all the vn links for a vn to the same likelihood array
         for i in self.vns:
             vn_index = i.identifier
             for j in i.links:
                 self.update_link_weight(j, vn_index, P[vn_index])
+        
+        copy_links = self.links.copy()
+        max_prob_codeword = self.get_max_prob_codeword(P, GF)
+        print(max_prob_codeword)
 
         for i in range(max_iterations):
+            self.links = copy_links
             # VN Update
             for i in self.cns:
                 link_weights = self.get_cn_link_values(i)
@@ -279,35 +283,38 @@ class VariableTannerGraph:
                     current_value = self.get_link_weight(i.identifier, j)
                     vals = self.remove_from_array(vals, current_value)        
                     pdf = perform_convolutions(vals)
-                    self.update_link_weight(i,j,pdf[idx_shuffle])
+                    self.update_link_weight(i,j,pdf[idx_shuffle]) 
                 
             max_prob_codeword = self.get_max_prob_codeword(P, GF)
             
             # Check if we have got a valid codeword
             if self.validate_codeword(H, GF, max_prob_codeword):
+                print("I reached here")
                 return max_prob_codeword
 
-            # CN Update
+            # CN Update - it must remain intact whilst new weights are being formed
+            copy_links = self.links.copy()
             for a in range(GF.order):
                 for j in self.vns:
                     vn_index = j.identifier
                     for i in j.links:
                         # Initial Likelihoods
 
-                        self.update_within_link_weight(i, vn_index, a, P[vn_index][a])
-
+                        copy_links[(i, vn_index)][a] = P[vn_index][a]
+                        
                         for t in j.links:
                             if t == i:
                                 continue
-                            link_weight = self.get_link_weight(i, vn_index)
-                            alternate_link_weight = self.get_link_weight(t, vn_index)
-                            self.update_within_link_weight(i, j.identifier, a, link_weight[a]*alternate_link_weight[a])
+                            copy_links[(i,vn_index)][a] *= self.get_link_weight(t, vn_index)[a]
+                            #self.update_within_link_weight(i, j.identifier, a, link_weight[a]*alternate_link_weight[a])
                             
                         # Normalization
-                        val = self.get_link_weight(i,vn_index)
+                        val = copy_links[(i, vn_index)]
                         norm_factor = sum(val)
                         normalized_value = [i/norm_factor for i in val]
-                        self.update_link_weight(i,vn_index, normalized_value)
-            
-            print(max_prob_codeword)
+                        copy_links[i, vn_index] = normalized_value
+                        #self.update_link_weight(i,vn_index, normalized_value)
+            #print(list(self.links.values())[0])
+        
+        print(max_prob_codeword)
         return max_prob_codeword
