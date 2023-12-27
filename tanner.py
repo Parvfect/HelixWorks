@@ -185,7 +185,7 @@ class VariableTannerGraph:
         """ Returns the values of the link weights for the cn as an array"""
         vals = []
         for i in cn.links:
-            vals.append(self.get_link_weight(self.cn.identifier, i))
+            vals.append(self.get_link_weight(cn.identifier, i))
 
         return vals
 
@@ -221,25 +221,27 @@ class VariableTannerGraph:
         for i in range(len(arr)):
             self.vns[i].value = arr[i]
 
-    def get_max_prob_codeword(self):
+    def get_max_prob_codeword(self, P, GF):
         """Returns the most possible Codeword using the probability likelihoods established in the VN's
 
         Returns:
             codeword (arr): n length codeword with symbols
         """
         z = np.zeros(self.n)
-        for j in range(self.n):
-            probs = 1 * P[j, :]
-            for a in range(self.GF.order):
-                for i in idxs:
-                    probs[a] *= self.get_link_weight(i, j)[a]
-            z[j] = np.argmax(probs)
-        z = self.GF(z.astype(int))
+        for j in self.vns:
+            vn_index = j.identifier
+            probs = 1 * P[vn_index]
+            for a in range(GF.order):
+                for i in j.links:
+                    probs[a] *= self.get_link_weight(i, vn_index)[a]
+            z[vn_index] = np.argmax(probs)
+        z = GF(z.astype(int))
         return z
 
 
     def validate_codeword(self, H, GF, max_prob_codeword):
         """ Checks if the most probable codeword is valid as a termination condition of qspa decoding """
+        print(np.matmul(H, max_prob_codeword))
         return not np.matmul(H, max_prob_codeword).any()
 
     def remove_from_array(self, vals, current_value):
@@ -262,6 +264,12 @@ class VariableTannerGraph:
         # Initial likelihoods
         P = [i.value for i in self.vns]
 
+        # Initialize messages
+        for i in self.vns:
+            vn_index = i.identifier
+            for j in i.links:
+                self.update_link_weight(j, vn_index, P[vn_index])
+
         for i in range(max_iterations):
             # VN Update
             for i in self.cns:
@@ -273,7 +281,7 @@ class VariableTannerGraph:
                     pdf = perform_convolutions(vals)
                     self.update_link_weight(i,j,pdf[idx_shuffle])
                 
-            max_prob_codeword = get_max_prob_codeword()
+            max_prob_codeword = self.get_max_prob_codeword(P, GF)
             
             # Check if we have got a valid codeword
             if self.validate_codeword(H, GF, max_prob_codeword):
@@ -283,22 +291,23 @@ class VariableTannerGraph:
             for a in range(GF.order):
                 for j in self.vns:
                     vn_index = j.identifier
-                    idxs = self.nonzero_rows[j]
                     for i in j.links:
                         # Initial Likelihoods
-                        self.update_within_link_weight(i, vn_index, a, P[j,a])
 
-                        for t in j.links[t!=i]:
+                        self.update_within_link_weight(i, vn_index, a, P[vn_index][a])
+
+                        for t in j.links:
+                            if t == i:
+                                continue
                             link_weight = self.get_link_weight(i, vn_index)
                             alternate_link_weight = self.get_link_weight(t, vn_index)
-                            link_weight[a] *= alternate_link_weight[a]
-                            self.update_within_link_weight(i, j.identifier, a, link_weight)
+                            self.update_within_link_weight(i, j.identifier, a, link_weight[a]*alternate_link_weight[a])
                             
                         # Normalization
-                        val = self.get_link_weight(i,vn_value)
+                        val = self.get_link_weight(i,vn_index)
                         norm_factor = sum(val)
                         normalized_value = [i/norm_factor for i in val]
-                        self.update_link_weight(i,j, normalized_value)
+                        self.update_link_weight(i,vn_index, normalized_value)
             
-            if iterations > max_iterations:
-                return max_prob_codeword
+            print(max_prob_codeword)
+        return max_prob_codeword

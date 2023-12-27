@@ -5,7 +5,8 @@ import galois
 import row_echleon as r
 import numpy as np
 from tqdm import tqdm
-from graph import TannerGraph
+#from graph import TannerGraph
+from tanner import VariableTannerGraph
 import random
 import matplotlib.pyplot as plt
 from distracted_coupon_collector import distracted_coupon_collector_channel, choose_symbols
@@ -89,7 +90,7 @@ def simulate(Harr, GFH, GFK, symbols, P, n_code, k, read_length=10, max_iter=10,
     assert symbol_likelihoods_arr.shape == (n_code, ffdim)
     
     if cc:
-        graph = TannerGraph(dv, dc,k, n_code, ffdim=ffdim)
+        graph = VariableTannerGraph(dv, dc,k, n_code, ffdim=ffdim)
         graph.establish_connections(Harr)
         graph.assign_values(symbol_likelihoods_arr)
         #z = graph.coupon_collector_decoding()
@@ -138,11 +139,11 @@ def fer(P, n_code, k, iterations=10, read_lengths=np.arange(8,24), max_iter=10, 
 
 
 P = 0.02
-n_code, k = 210, 140
-iterations = 50
+n_code, k = 150, 100
+iterations = 5
 read_lengths = np.arange(5, 12)
 max_iter=20
-fer(P, n_code, k, iterations, read_lengths, max_iter)
-#fer(P, iterations, read_lengths, max_iter, cc_decoding=True, label="CC")
+#fer(P, n_code, k, iterations, read_lengths, max_iter)
+fer(P, n_code, k, iterations, read_lengths, max_iter, cc_decoding=True, label="CC")
 plt.legend()
 plt.show()

@@ -295,7 +295,7 @@ class TannerGraph:
         
         return [i.value for i in self.vns]
 
-        def get_max_prob_codeword(self):
+    def get_max_prob_codeword(self):
         """Returns the most possible Codeword using the probability likelihoods established in the VN's
 
         Returns:
@@ -347,6 +347,7 @@ class TannerGraph:
                     vals = self.remove_from_array(vals, current_value)
 
                     pdf = perform_convolutions(vals, current_value)
+                    weighted_pdf = pdf
                     new_values = set(current_value).intersection(set(possibilites))
                     self.vns[j].value = list(new_values)
                 self.vns[j].value = pdf[idx_shuffle]
