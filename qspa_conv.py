@@ -131,7 +131,7 @@ class QSPADecoder:
             
             parity = not np.matmul(self.GFH, z).any()
             if parity:
-                #print('Decoding successful!')
+                print(f'Decoding successful! Iteration {it + 1}')
                 return z
             else:
                 Q = self.update_Q_msgs(P, Q, S)

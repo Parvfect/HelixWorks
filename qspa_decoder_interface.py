@@ -84,7 +84,7 @@ def simulate(Harr, GFH, GFK, symbols, P, n_code, k, read_length=10, max_iter=10,
 
     input_arr = [random.randint(0,66) for i in range(k)]
     C = np.matmul(GF(input_arr), GFK)
-    print(f"Codeword is \n{C}")
+    #print(f"Codeword is \n{C}")
 
     symbol_likelihoods_arr = np.array(simulate_reads(C, symbols, read_length, P, n_motifs, n_picks))
     
@@ -140,11 +140,15 @@ def fer(P, n_code, k, iterations=10, read_lengths=np.arange(8,24), max_iter=10, 
 
 
 P = 0.02
-n_code, k = 150, 100
-iterations = 5
-read_lengths = np.arange(12, 15)
-max_iter=20
+n_code, k = 210, 140
+iterations = 20
+read_lengths = np.arange(5, 12)
+max_iter=10
 #fer(P, n_code, k, iterations, read_lengths, max_iter)
-fer(P, n_code, k, iterations, read_lengths, max_iter, cc_decoding=True, label="CC")
+fer(P, n_code, k, iterations, read_lengths, max_iter, cc_decoding=False, label="Matrice QSPA")
+fer(P, n_code, k, iterations, read_lengths, max_iter, cc_decoding=True, label="Tanner QSPA")
 plt.legend()
 plt.show()
+
+
+# Problem lies in either initialization or the VN update - we don't need to think about CN update currently since there are 1 iteration problems we should be able to solve that we are unable to solve
