@@ -11,6 +11,7 @@ from bec import generate_erasures
 from tqdm import tqdm
 from cProfile import Profile
 from density_evolution import threshold_binary_search
+from sklearn.preprocessing import normalize
 from pstats import Stats
 import re
 import sys
@@ -240,7 +241,8 @@ class VariableTannerGraph:
 
     def normalize(self, arr):
         """ Normalizes an array """
-        return [i/sum(arr) for i in arr]
+        sum_arr = sum(arr)
+        return [i/sum_arr for i in arr]
 
     def validate_codeword(self, H, GF, max_prob_codeword):
         """ Checks if the most probable codeword is valid as a termination condition of qspa decoding """
@@ -323,7 +325,6 @@ class VariableTannerGraph:
 
             max_prob_codeword = self.get_max_prob_codeword(self.P, GF)
             if self.validate_codeword(H, GF, max_prob_codeword):
-                print("Decoding Successful")
                 return max_prob_codeword
 
             self.cn_update_qspa()

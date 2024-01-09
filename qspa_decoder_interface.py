@@ -10,6 +10,9 @@ from tanner import VariableTannerGraph
 import random
 import matplotlib.pyplot as plt
 from distracted_coupon_collector import distracted_coupon_collector_channel, choose_symbols
+from pstats import Stats
+import re
+from cProfile import Profile
 
 def test_symbol_likelihood():
     n_picks = 4
@@ -140,15 +143,27 @@ def fer(P, n_code, k, iterations=10, read_lengths=np.arange(8,24), max_iter=10, 
 
 
 P = 0.02
-n_code, k = 210, 140
-iterations = 20
-read_lengths = np.arange(5, 12)
+n_code, k = 1002, 668
+iterations = 100
+read_lengths =  np.arange(5, 14)
 max_iter=10
 #fer(P, n_code, k, iterations, read_lengths, max_iter)
-fer(P, n_code, k, iterations, read_lengths, max_iter, cc_decoding=False, label="Matrice QSPA")
-fer(P, n_code, k, iterations, read_lengths, max_iter, cc_decoding=True, label="Tanner QSPA")
-plt.legend()
-plt.show()
+#fer(P, n_code, k, iterations, read_lengths, max_iter, cc_decoding=False, label="Matrice QSPA")
 
 
-# Problem lies in either initialization or the VN update - we don't need to think about CN update currently since there are 1 iteration problems we should be able to solve that we are unable to solve
+if __name__ == "__main__":
+    with Profile() as prof:
+        fer(P, n_code, k, iterations, read_lengths, max_iter, cc_decoding=True, label="Tanner QSPA")
+        (
+            Stats(prof)
+            .strip_dirs()
+            .sort_stats("cumtime")
+            .print_stats(10)
+        )
+
+
+    plt.legend()
+    plt.show()
+
+
+    # Problem lies in either initialization or the VN update - we don't need to think about CN update currently since there are 1 iteration problems we should be able to solve that we are unable to solve
