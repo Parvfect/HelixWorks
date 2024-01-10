@@ -62,7 +62,7 @@ def hw_likelihoods(k_motifs, codeword_noise, eps):
 class QSPADecoder:
     """Class implementing QSPA Decoder described in [1].
     
-    [1] Ryan, William, and Shu Lin. Channel Codes: Classical and Modern (2009).
+    [1] Ryan, William, and Shu Lin. Channel Codes: Classical an` Modern (2009).
     """
 
     def __init__(self, n, m, GF, GFH):
@@ -197,7 +197,7 @@ class QSPADecoder:
             for j in range(self.n):
                 idxs = self.nonzero_rows[j]
                 for i in idxs:
-                    # Initial Liklihoods
+                    # Initial Likelihoods
                     Q[i, j, a] = 1 * P[j, a]
 
                     # Don't understand this step - has to do with CN update

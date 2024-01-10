@@ -21,7 +21,7 @@ def test_symbol_likelihood():
     get_symbol_likelihood(n_picks, motif_occurences, P)
 
 
-def get_symbol_likelihood(n_picks, motif_occurences, P):
+def get_symbol_likelihood(n_picks, motif_occurences, P, pop=True):
     """Generates Likelihood Array for a Symbol after it's passed through the channel, using the number of times each motif is encountered
 
         Args:
@@ -35,10 +35,11 @@ def get_symbol_likelihood(n_picks, motif_occurences, P):
     # Getting the Likelihoods from Alberto's Likelihood Generator
     likelihoods = hw_likelihoods(n_picks, motif_occurences, P)
 
-    # Popping the last three likelihoods to make the symbols match
-    likelihoods.pop()
-    likelihoods.pop()
-    likelihoods.pop()
+    if pop:
+        # Popping the last three likelihoods to make the symbols match
+        likelihoods.pop()
+        likelihoods.pop()
+        likelihoods.pop()
 
     # Re-normalising
     norm_factor = 1/sum(likelihoods)
@@ -143,9 +144,9 @@ def fer(P, n_code, k, iterations=10, read_lengths=np.arange(8,24), max_iter=10, 
 
 
 P = 0.02
-n_code, k = 1002, 668
-iterations = 100
-read_lengths =  np.arange(5, 14)
+n_code, k = 27, 18
+iterations = 10
+read_lengths =  np.arange(14, 16)
 max_iter=10
 #fer(P, n_code, k, iterations, read_lengths, max_iter)
 #fer(P, n_code, k, iterations, read_lengths, max_iter, cc_decoding=False, label="Matrice QSPA")
