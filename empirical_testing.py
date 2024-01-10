@@ -70,6 +70,7 @@ def get_symbol_likelihood_arr(filename):
     #motif_occurance_base_arr = [1,1,1,1,1,1,1,1] # We want to assume that each motif was seen once at least - let's see if this works better
     motif_occurance_base_arr = [0,0,0,0,0,0,0,0] # We want to assume that each motif was seen once at least
     
+    #channel_output_payloads = channel_output_payloads.reshape()
 
     # 1280 payloads x 8 cycles x 4 motifs
     num_payloads = channel_output_payloads.shape[0]
@@ -82,14 +83,14 @@ def get_symbol_likelihood_arr(filename):
     for i in range(num_cycles):
         
         symbol_likelihoods = []
+        mask = create_mask(rng, 1278) # that's  how we divided it
+        print(mask[:5])
         
         for j in range(num_payloads-2): # Ignore last two since they are padded
             
             payload_motifs = channel_output_payloads[j,i]
             
             motif_occurences = motif_occurance_base_arr.copy()
-            
-            mask = create_mask(rng, 1278) # that's  how we divided it
             
             for motif in payload_motifs:
                 
@@ -98,9 +99,9 @@ def get_symbol_likelihood_arr(filename):
                     print(f"Missing Motif observed - count = {missing_motif_count}")
                     continue
                 
-                motif_occurences[motif-1] += 1
+                motif_occurences[motif-1] += 10
             
-            payload_symbol_likelihood_arr = get_symbol_likelihood(4, motif_occurences, P=0.2, pop=False)
+            payload_symbol_likelihood_arr = get_symbol_likelihood(4, motif_occurences, P=0.02, pop=False)
 
             unmasked_payload_symbol_likelihood_arr = unmask_likelihood_arr(payload_symbol_likelihood_arr, mask[j])
             
@@ -128,17 +129,20 @@ def decode(symbol_likelihood_arrs, encoded_symbols):
         symbol_likelihood_arr = symbol_likelihood_arrs[i][:1278] # Since last two are padded zeros to get to right size
         assert len(symbol_likelihood_arr) == len(graph.vns) == 1278
         graph.assign_values(symbol_likelihood_arr)
-        z = graph.qspa_decoding(GFH, GF)
-        print(list(z))
-        print(encoded_symbols[i][:1278])
-        if list(z) == encoded_symbols[i][:1278]:
+        z = [np.argmax(i) for i in symbol_likelihood_arr]
+        #z = graph.qspa_decoding(GFH, GF)
+        z = list(z)
+        z = [int(k) for k in z]
+        print(z[:5])
+        print(encoded_symbols[i][:5])
+        if z == encoded_symbols[i][:1278]:
             print(f"Cycle {i} is Decoded Succesfully")
         else:
             print(f"Cycle {i} failed to decode")
 
 
-#symbol_likelihood_arrs = get_symbol_likelihood_arr(decoded_filename)
-symbol_likelihood_arrs = np.load(np_arr_filename)
+symbol_likelihood_arrs = get_symbol_likelihood_arr(encoded_filename)
+#symbol_likelihood_arrs = np.load(np_arr_filename)
 print(symbol_likelihood_arrs.shape)
 
 encoded_payloads = read_payloads_from_file(encoded_filename)

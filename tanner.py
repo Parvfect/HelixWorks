@@ -325,8 +325,10 @@ class VariableTannerGraph:
 
             max_prob_codeword = self.get_max_prob_codeword(self.P, GF)
             if self.validate_codeword(H, GF, max_prob_codeword):
+                print("Decoding converges")
                 return max_prob_codeword
 
             self.cn_update_qspa()
-            
+        
+        print("Decoding does not converge")
         return max_prob_codeword
