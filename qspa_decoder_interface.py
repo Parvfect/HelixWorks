@@ -144,7 +144,7 @@ def fer(P, n_code, k, iterations=10, read_lengths=np.arange(8,24), max_iter=10, 
 
 
 P = 0.02
-n_code, k = 27, 18
+n_code, k = 1278, 18
 iterations = 10
 read_lengths =  np.arange(14, 16)
 max_iter=10
