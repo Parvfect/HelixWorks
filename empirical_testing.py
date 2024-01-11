@@ -8,17 +8,18 @@ import galois
 import row_echleon as r
 import numpy as np
 from itertools import combinations
-from experiment_pipeline.dependencies import create_mask, invert_mask
+from experiment_pipeline.dependencies import create_mask, invert_mask, find_I_columns
 import ast
 from distracted_coupon_collector import choose_symbols
 from qspa_decoder_interface import get_symbol_likelihood
 from tanner import VariableTannerGraph
 from tqdm import tqdm
+import os
 import filecmp
 
 np_arr_filename = 'symbol_likelihoods_collection_99.74consensus.npy'
-#decoded_filename = r'C:\Users\Parv\Doc\HelixWorks\code\data\E1C01-01-1280\OAS\T1-DC-99.74\EIC01-01-1280-T1_decoded_consensus.tsv'
-decoded_filename = r"C:\Users\Parv\Doc\HelixWorks\code\data\E1C01-01-1280\OAS\T2-DC-60.51\EIC01-01-1280-T2_decoded_consensus.tsv"
+decoded_filename = r'C:\Users\Parv\Doc\HelixWorks\code\data\E1C01-01-1280\OAS\T1-DC-99.74\EIC01-01-1280-T1_decoded_consensus.tsv'
+#decoded_filename = r"C:\Users\Parv\Doc\HelixWorks\code\data\E1C01-01-1280\OAS\T2-DC-60.51\EIC01-01-1280-T2_decoded_consensus.tsv"
 encoded_filename = r'C:\Users\Parv\Doc\HelixWorks\code\data\E1C01-01-1280\OAS\T1-DC-99.74\EIC01-01-1280-T1_encoded.tsv'
 symbols = choose_symbols(8,4)
 
@@ -152,6 +153,7 @@ def decode(symbol_likelihood_arrs, encoded_symbols):
     GFH = GF(np.array(r.get_H_Matrix(dv, dc, k, n, Harr), dtype=int))
 
     rng = np.random.default_rng(seed=42)
+    decoded_arrs = []
 
     for i in tqdm(range(len(symbol_likelihood_arrs))):
         symbol_likelihood_arr = symbol_likelihood_arrs[i][:1278] # Since last two are padded zeros to get to right size
@@ -171,10 +173,13 @@ def decode(symbol_likelihood_arrs, encoded_symbols):
             print(f"Cycle {i} is Decoded Succesfully")
         else:
             print(f"Cycle {i} failed to decode")
+        
+        decoded_arrs.append(z)
+    
+    return decoded_arrs
 
-
-symbol_likelihood_arrs = get_symbol_likelihood_arr(decoded_filename)
-#symbol_likelihood_arrs = np.load(np_arr_filename)
+#symbol_likelihood_arrs = get_symbol_likelihood_arr(decoded_filename)
+symbol_likelihood_arrs = np.load(np_arr_filename)
 
 encoded_payloads = read_payloads_from_file(encoded_filename)
 encoded_payloads = encoded_payloads.reshape(10240, 4)
@@ -199,9 +204,25 @@ for i in range(num_codewords):
     codeword = [(codeword[i] - mask[i]) % 70 for i in range(len(codeword))]
     codeword_arrs.append(codeword)
 
-decode(symbol_likelihood_arrs, codeword_arrs)
 
+G = np.load("G_empirical.npy")
+padding_zeros = 217
+final_codewords_arr = decode(symbol_likelihood_arrs, codeword_arrs)
+column_indices = find_I_columns(G)
+recovered_input = np.array([[i[int(j)] for j in column_indices]for i in final_codewords_arr]).flatten()
+len_recovered_input = len(recovered_input) - padding_zeros
+recovered_arr = recovered_input[:len_recovered_input]
 
-def file_checking(filename1, filename2):
+recovered_vals = recovered_arr.astype(int)
+b2 = 0
+for pw in range(len(recovered_vals)):
+    b2 += int(67**pw) * int(recovered_vals[pw])
 
-    return filecmp.cmp(filename1, filename2)
+# Length parameter is the byte size of the input file
+byte_length = os.path.getsize("input_txt.txt")
+byte_array = b2.to_bytes(byte_length,'big') 
+
+with open("output.txt", "wb") as file_handle:
+    file_handle.write(byte_array)
+
+print(filecmp.cmp("input_txt.txt", "output.txt"))
