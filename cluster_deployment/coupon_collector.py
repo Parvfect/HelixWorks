@@ -14,7 +14,6 @@ from tqdm import tqdm
 import matplotlib.pyplot as plt
 from protograph_interface import get_Harr_sc_ldpc, get_dv_dc
 import sys
-from load_saved_codes import get_saved_code
 
 
 def choose_symbols(n_motifs, picks):
@@ -123,12 +122,12 @@ def get_parameters(n_motifs, n_picks, dv, dc, k, n, ffdim, display=True, Harr=No
     graph = TannerGraph(dv, dc, k, n, ffdim=ffdim)
 
     if Harr is None:
-        Harr = r.get_H_arr(dc, dv, k, n)
-        H = r.get_H_Matrix(dc, dv, k, n, Harr)
-        G = r.parity_to_generator(H, ffdim=ffdim)
+        Harr = r.get_H_arr(dv, dc, k, n)
+        H = r.get_H_Matrix(dv, dc, k, n, Harr)
+        #G = r.parity_to_generator(H, ffdim=ffdim)
+        G = r.alternative_parity_to_generator(H, ffdim=ffdim)
 
     graph.establish_connections(Harr)
-
 
     if np.any(np.dot(G, H.T) % ffdim != 0):
         print("Matrices are not valid, aborting simulation")
@@ -173,7 +172,8 @@ def get_parameters_sc_ldpc(n_motifs, n_picks, L, M, dv, dc, k, n, ffdim, display
 
     if H is None and G is None:
         H = r.get_H_matrix_sclpdc(dc, dv, k, n, Harr)
-        G = r.parity_to_generator(H, ffdim=ffdim)
+        #G = r.parity_to_generator(H, ffdim=ffdim)
+        G = r.alternative_parity_to_generator(H, ffdim=ffdim)
 
     if np.any(np.dot(G, H.T) % ffdim != 0):
         print("Matrices are not valid, aborting simulation")
@@ -262,7 +262,8 @@ def frame_error_rate(k, n, dv, dc, graph, C, symbols, motifs, n_picks, iteration
 def decoding_errors_fer(k, n, dv, dc, graph, C, symbols, motifs, n_picks, decoding_failures_parameter=5, max_iterations=100, iterations=50, uncoded=False, bec_decode=False, label=None, code_class=""):
     """ Returns the frame error rate curve - for same H, same G, same C"""
 
-    read_lengths = np.arange(1, 12)
+    #read_lengths = np.arange(1, 12)
+    read_lengths = [1]
     frame_error_rate = []
     max_iterations = max_iterations
     decoding_failures_parameter = decoding_failures_parameter # But can be adjusted as a parameter
@@ -317,8 +318,8 @@ def run_fer(n_motifs, n_picks, dv, dc, k, n, L, M, ffdim, code_class="", iterati
 
     Harr, H, G = None, None, None
 
-    if saved_code:
-        Harr, H, G = get_saved_code(dv, dc, k, n, L, M, code_class=code_class)
+    #if saved_code:
+    #    Harr, H, G = get_saved_code(dv, dc, k, n, L, M, code_class=code_class)
     
     if code_class == "sc_":
         graph, C, symbols, motifs = get_parameters_sc_ldpc(n_motifs, n_picks, L, M, dv, dc, k, n, ffdim, display=False, Harr=Harr, H=H, G=G)
@@ -346,10 +347,10 @@ if __name__ == "__main__":
     with Profile() as prof:
         n_motifs, n_picks = 8, 4
         dv, dc, ffdim = 3, 9, 67
-        k, n = 612, 1020
-        L, M = 10, 102
+        k, n = 10000, 15000
+        L, M = 18,18
         read_length = 6
-        run_fer(n_motifs, n_picks, dv, dc, k, n, L, M, ffdim, code_class="sc_", saved_code=True)
+        run_fer(n_motifs, n_picks, dv, dc, k, n, L, M, ffdim, code_class="", saved_code=False)
     (
         Stats(prof)
         .strip_dirs()

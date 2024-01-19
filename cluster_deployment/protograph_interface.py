@@ -3,7 +3,6 @@
 import sc_ldpc_protograph
 import numpy as np
 
-
 def get_vns(dv, dc, M, L):
     
     cns_per_pos = int(dv / dc * M)

@@ -18,9 +18,9 @@ import os
 import filecmp
 
 np_arr_filename = 'symbol_likelihoods_collection_99.74consensus.npy'
-decoded_filename = r'C:\Users\Parv\Doc\HelixWorks\code\data\E1C01-01-1280\OAS\T1-DC-99.74\EIC01-01-1280-T1_decoded_consensus.tsv'
-#decoded_filename = r"C:\Users\Parv\Doc\HelixWorks\code\data\E1C01-01-1280\OAS\T2-DC-60.51\EIC01-01-1280-T2_decoded_consensus.tsv"
-encoded_filename = r'C:\Users\Parv\Doc\HelixWorks\code\data\E1C01-01-1280\OAS\T1-DC-99.74\EIC01-01-1280-T1_encoded.tsv'
+#decoded_filename = r'C:\Users\Parv\Doc\HelixWorks\code\data\E1C01-01-1280\OAS\T1-DC-99.74\EIC01-01-1280-T1_decoded_consensus.tsv'
+decoded_filename = r"C:\Users\Parv\Doc\HelixWorks\code\data\E1C01-01-1280\OAS\T1-DC-99.74\EIC01-01-1280-T1_decoded_consensus.tsv"
+encoded_filename = r"C:\Users\Parv\Doc\HelixWorks\code\data\E1C01-01-1280\OAS\T1-DC-99.74\EIC01-01-1280-T1_encoded.tsv"
 symbols = choose_symbols(8,4)
 
 def read_payloads_from_file(filename):
@@ -61,20 +61,6 @@ def unmask_likelihood_arr(likelihood_arr, mask):
     norm_factor = sum(unmasked_likelihood_arr)
     unmasked_likelihood_arr = [i/norm_factor for i in unmasked_likelihood_arr]
     return unmasked_likelihood_arr
-
-def unmask_using_symbol(motif_occurences, mask):
-    """Unmasking directly through symbol poss generator"""
-    nonzero_indices = []
-    for i in range(motif_occurences):
-        if motif_occurences[i]==1:
-            nonzero_indices.append(i)
-    symbol = symbols.index(nonzero_indices)
-    unmasked_symbol = (symbol - mask) % 70
-    motifs_in_unmasked_symbol = symbols[unmasked_symbol]
-    unmasked_motif_occurences = np.zeros(8)
-    for motif in motifs_in_unmasked_symbol:
-        unmasked_motif_occurences[motif] +=1
-    return get_symbol_likelihood(4, unmasked_motif_occurences, P=0.02, pop=False)
 
 def get_symbol_likelihood_arr(filename):
     """Reads the output file, converts to motifs encountered assuming all are encountered initially and then adjusting based on symbols observed and then to  8 x 1280 x 67 Symbol Likelihoods to be fed to QSPA Decoder for preloaded G and Harr. Also saves the array to np_savefilepath
@@ -178,8 +164,8 @@ def decode(symbol_likelihood_arrs, encoded_symbols):
     
     return decoded_arrs
 
-#symbol_likelihood_arrs = get_symbol_likelihood_arr(decoded_filename)
-symbol_likelihood_arrs = np.load(np_arr_filename)
+symbol_likelihood_arrs = get_symbol_likelihood_arr(decoded_filename)
+#symbol_likelihood_arrs = np.load(np_arr_filename)
 
 encoded_payloads = read_payloads_from_file(encoded_filename)
 encoded_payloads = encoded_payloads.reshape(10240, 4)

@@ -1,14 +1,11 @@
 
 import numpy as np
-from Hmatrixbaby import ParityCheckMatrix
 from networkx.algorithms import bipartite
 import networkx as nx
 import matplotlib.pyplot as plt
 import time
-from bec import generate_erasures
 from tqdm import tqdm
 from cProfile import Profile
-from density_evolution import threshold_binary_search
 from pstats import Stats
 import re
 import sys
