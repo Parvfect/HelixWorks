@@ -1,4 +1,5 @@
 
+
 import numpy as np
 from networkx.algorithms import bipartite
 import networkx as nx
@@ -184,32 +185,7 @@ class VariableTannerGraph:
             vals.append(self.get_link_weight(cn.identifier, i))
 
         return vals
-
-    def visualise(self):
-        """ Visualise Tanner Graph """
-        G = nx.Graph()
-
-        rows = len(self.cns)
-        cols = len(self.vns)
-
-        # For each row add a check node
-        for i in range(rows):
-            G.add_node(i, bipartite=0)
-
-        # For each column add a variable node
-        for i in range(cols):
-            G.add_node(i + rows, bipartite=1)
-        
-        # Utilise the links to add edges
-        for (i,j) in enumerate(self.cns):
-            for k in j.links:
-                G.add_edge(i, k + rows, weight=1)
     
-    
-        nx.draw(G, with_labels=True)
-        plt.show()
-        return G
-
     def assign_values(self, arr):   
         """Assigns values to the VNs based on input pre decoding """
 

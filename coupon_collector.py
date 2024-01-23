@@ -172,7 +172,7 @@ def get_parameters_sc_ldpc(n_motifs, n_picks, L, M, dv, dc, k, n, ffdim, display
     graph.establish_connections(Harr)
 
     if H is None and G is None:
-        H = r.get_H_matrix_sclpdc(dc, dv, k, n, Harr)
+        H = r.get_H_matrix_sclpdc(dv, dc, k, n, Harr)
         G = r.parity_to_generator(H, ffdim=ffdim)
 
     if np.any(np.dot(G, H.T) % ffdim != 0):
@@ -346,10 +346,10 @@ if __name__ == "__main__":
     with Profile() as prof:
         n_motifs, n_picks = 8, 4
         dv, dc, ffdim = 3, 9, 67
-        k, n = 612, 1020
-        L, M = 10, 102
+        k, n = 30, 45
+        L, M = 25, 25
         read_length = 6
-        run_fer(n_motifs, n_picks, dv, dc, k, n, L, M, ffdim, code_class="sc_", saved_code=True)
+        run_fer(n_motifs, n_picks, dv, dc, k, n, L, M, ffdim, code_class="sc_", saved_code=False)
     (
         Stats(prof)
         .strip_dirs()

@@ -1,7 +1,6 @@
 
 import numpy as np
-from networkx.algorithms import bipartite
-import networkx as nx
+import row_echleon as r
 import matplotlib.pyplot as plt
 import time
 from tqdm import tqdm
@@ -100,7 +99,7 @@ class TannerGraph:
         
         # In case Harr is sent as a parameter
         if Harr is None:
-            self.Harr = ParityCheckMatrix(self.dv, self.dc, self.k, self.n).get_H_arr()
+            self.Harr = r.get_H_arr(self.dv, self.dc, self.k, self.n)
         else:
             self.Harr = np.array(Harr)
         
@@ -127,32 +126,7 @@ class TannerGraph:
             vals.append(self.vns[i].value)
 
         return vals
-
-    def visualise(self):
-        """ Visualise Tanner Graph """
-        G = nx.Graph()
-
-        rows = len(self.cns)
-        cols = len(self.vns)
-
-        # For each row add a check node
-        for i in range(rows):
-            G.add_node(i, bipartite=0)
-
-        # For each column add a variable node
-        for i in range(cols):
-            G.add_node(i + rows, bipartite=1)
-        
-        # Utilise the links to add edges
-        for (i,j) in enumerate(self.cns):
-            for k in j.links:
-                G.add_edge(i, k + rows, weight=1)
     
-    
-        nx.draw(G, with_labels=True)
-        plt.show()
-        return G
-
     def assign_values(self, arr):   
 
         assert len(arr) == len(self.vns) 
@@ -160,49 +134,6 @@ class TannerGraph:
         for i in range(len(arr)):
             self.vns[i].value = arr[i]
 
-    def bec_decode(self, max_iterations=100):
-        """ Assuming VNs have been initialized with values, perform BEC decoding """
-
-        filled_vns = sum([1 for i in self.vns if not np.isnan(i.value)])
-        resolved_vns = 0
-
-        for iteration in range(max_iterations):
-            
-            # For each check node  
-            for (i,j) in enumerate(self.cns):
-                # See all connection VN values
-                erasure_counter = 0
-                # Counting number of erasures
-                for k in j.links:
-                    if np.isnan(self.vns[int(k)].value):
-                        erasure_counter += 1
-                
-                # If Erasure counter is equal to 1, fill erasure
-                if erasure_counter == 1:
-                    sum_links = 0
-                    erasure_index = 0
-                    
-                    for k in j.links:
-                        # Collect all values in an array
-                        if np.isnan(self.vns[int(k)].value):
-                            #sum_links += self.vns[int(k)].value
-                            erasure_index = k
-                        else:
-                            #erasure_index = k
-                            sum_links += self.vns[int(k)].value
-                            
-                    
-                    # Replace erasure with sum modulo 2
-                    self.vns[int(erasure_index)].value = sum_links % 2
-                    resolved_vns+=1
-            
-            # Check in every iteration - otherwise it will be too slow
-            if filled_vns+resolved_vns == self.n:
-                return np.array([i.value for i in self.vns])
-
-
-        return np.array([i.value for i in self.vns])
-    
     def coupon_collector_erasure_decoder(self, max_iterations=100):
         """ Belief Propagation decoding for the general case (currently only works for BEC) )"""
 
@@ -240,7 +171,7 @@ class TannerGraph:
                     return np.array([i.value for i in self.vns])
             
             if prev_resolved_vns == resolved_vns:
-                    return [i.value for i in self.vns]
+                    return np.array([i.value for i in self.vns])
             prev_resolved_vns = resolved_vns
             
         return np.array([i.value for i in self.vns])
@@ -265,17 +196,12 @@ class TannerGraph:
                 
                     vals = vn_vals.copy()
                     current_value = self.vns[j].value
-                    #vals = self.remove_from_array(vals, current_value)
                     vals.remove(current_value)
 
                     possibilites = permuter(vals, self.ffdim, current_value)
                     new_values = set(current_value).intersection(set(possibilites))
                     self.vns[j].value = list(new_values)
                     
-                    """
-                    if len(new_values) < len(current_value) and len(possibilites) > 1:
-                        print("I reached here")
-                    """
                     if len(current_value) > 1 and len(new_values) == 1:
                         resolved_vns += 1
                     
@@ -292,34 +218,3 @@ class TannerGraph:
             prev_resolved_vns = resolved_vns   
         
         return [i.value for i in self.vns]
-
-    def get_max_prob_codeword(self):
-        """Returns the most possible Codeword using the probability likelihoods established in the VN's
-
-        Returns:
-            codeword (arr): n length codeword with symbols
-        """
-
-        codeword = np.zeros(len(self.vns))
-        for i in range(len(self.vns)):
-            vn_value = self.vns[i].value
-            max_prob_symbol = list(vn_value).index(max(vn_value))
-            codeword[i] = max_prob_symbol
-        
-        return codeword
-
-    def validate_codeword(self, H, GF, max_prob_codeword):
-        """ Checks if the most probable codeword is valid as a termination condition of qspa decoding """
-        return not np.matmul(H, GF(max_prob_codeword.astype(int))).any()
-
-    def remove_from_array(self, vals, current_value):
-        """ Removes current value from vals"""
-
-        new_vals = []
-        for i in range(len(vals)):
-            if np.array_equal(vals[i], current_value):
-                continue
-            new_vals.append(vals[i])
-        return new_vals 
-
-    
