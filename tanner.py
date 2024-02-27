@@ -299,7 +299,9 @@ class VariableTannerGraph:
                     for t in j.links[j.links!=i]:
                         copy_links[(i,vn_index)][a] *= self.get_link_weight(t, vn_index)[a]
 
-                    copy_links[i, vn_index] = self.normalize(copy_links[(i,vn_index)])    
+                    sum_copy_links = sum(copy_links[i, vn_index])
+                    copy_links[i, vn_index] = copy_links[i, vn_index]/sum_copy_links
+                    
         self.links = copy_links
 
     def qspa_decoding(self, H, GF, max_iterations=10):

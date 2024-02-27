@@ -123,8 +123,8 @@ def get_parameters(n_motifs, n_picks, dv, dc, k, n, ffdim, display=True, Harr=No
     graph = TannerGraph(dv, dc, k, n, ffdim=ffdim)
 
     if Harr is None:
-        Harr = r.get_H_arr(dc, dv, k, n)
-        H = r.get_H_Matrix(dc, dv, k, n, Harr)
+        Harr = r.get_H_arr(dv, dc, k, n)
+        H = r.get_H_Matrix(dv, dc, k, n, Harr)
         G = r.parity_to_generator(H, ffdim=ffdim)
 
     graph.establish_connections(Harr)
@@ -218,51 +218,9 @@ def run_singular_decoding(graph, C, read_length, symbols, motifs, n_picks):
         print("Decoding unsuccessful")
         return None
 
-
-def frame_error_rate(k, n, dv, dc, graph, C, symbols, motifs, n_picks, iterations=50, uncoded=False, bec_decode=False, label=None, code_class=""):
-    """ Returns the frame error rate curve - for same H, same G, same C"""
-    read_lengths = np.arange(2, 12)
-    frame_error_rate = []
-
-    for i in tqdm(read_lengths):
-        counter = 0
-        for j in tqdm(range(iterations)):
-            # Assigning values to Variable Nodes after generating erasures in zero array
-            symbols_read = read_symbols(C, i, symbols, motifs, n_picks)
-            if not uncoded:
-                graph.assign_values(read_symbols(C, i, symbols, motifs, n_picks))
-                if bec_decode:
-                    decoded_values = graph.coupon_collector_erasure_decoder()
-                else:
-                    decoded_values = graph.coupon_collector_decoding()
-            else:
-                decoded_values = symbols_read
-            # Getting the average error rates for iteration runs
-  
-            if sum([len(i) for i in decoded_values]) == len(decoded_values):
-                if np.all(np.array(decoded_values).T[0] == C):
-                    counter += 1
-
-        error_rate = (iterations - counter)/iterations
-        frame_error_rate.append(error_rate)
-    
-    
-    plt.plot(read_lengths, frame_error_rate, 'o')
-    plt.plot(read_lengths, frame_error_rate, label=label)
-    plt.title("Frame Error Rate for CC for {}{}-{}  {}-{} for 8C4 Symbols".format(code_class, k, n, dv, dc))
-    plt.ylabel("Frame Error Rate")
-    plt.xlabel("Read Length")
-
-    # Displaying final figure
-    plt.xlim(1,19)
-    plt.ylim(0,1)
-
-    return frame_error_rate
-
-def decoding_errors_fer(k, n, dv, dc, graph, C, symbols, motifs, n_picks, decoding_failures_parameter=5, max_iterations=100, iterations=50, uncoded=False, bec_decode=False, label=None, code_class=""):
+def decoding_errors_fer(k, n, dv, dc, graph, C, symbols, motifs, n_picks, decoding_failures_parameter=10, max_iterations=100, iterations=50, uncoded=False, bec_decoder=False, label=None, code_class="", read_lengths=np.arange(1,20)):
     """ Returns the frame error rate curve - for same H, same G, same C"""
 
-    read_lengths = np.arange(1, 12)
     frame_error_rate = []
     max_iterations = max_iterations
     decoding_failures_parameter = decoding_failures_parameter # But can be adjusted as a parameter
@@ -274,7 +232,7 @@ def decoding_errors_fer(k, n, dv, dc, graph, C, symbols, motifs, n_picks, decodi
             symbols_read = read_symbols(C, i, symbols, motifs, n_picks)
             if not uncoded:
                 graph.assign_values(read_symbols(C, i, symbols, motifs, n_picks))
-                if bec_decode:
+                if bec_decoder:
                     decoded_values = graph.coupon_collector_erasure_decoder()
                 else:
                     decoded_values = graph.coupon_collector_decoding()
@@ -306,16 +264,15 @@ def decoding_errors_fer(k, n, dv, dc, graph, C, symbols, motifs, n_picks, decodi
     plt.xlabel("Read Length")
 
     # Displaying final figure
-    plt.xlim(1,19)
+    plt.xlim(read_lengths[0], read_lengths[-1])
     plt.ylim(0,1)
+    plt.xticks(np.arange(read_lengths[0], read_lengths[-1], 1))
 
     return frame_error_rate
 
 
 
-def run_fer(n_motifs, n_picks, dv, dc, k, n, L, M, ffdim, code_class="", iterations=5, bec_decoder=False, uncoded=False, saved_code=False, singular_decoding=True, fer_errors=True):
-
-    Harr, H, G = None, None, None
+def run_fer(n_motifs, n_picks, dv, dc, k, n, L, M, ffdim, code_class="", iterations=5, bec_decoder=False, uncoded=False, saved_code=False, singular_decoding=True, fer_errors=True, read_lengths=np.arange(1,20)):
 
     if saved_code:
         Harr, H, G = get_saved_code(dv, dc, k, n, L, M, code_class=code_class)
@@ -328,15 +285,18 @@ def run_fer(n_motifs, n_picks, dv, dc, k, n, L, M, ffdim, code_class="", iterati
     if singular_decoding:
         run_singular_decoding(graph, C, 8, symbols, motifs, n_picks)
     
-    print(decoding_errors_fer(k, n, dv, dc, graph, C, symbols, motifs, n_picks, iterations=iterations, label=f'CC Decoder', code_class=code_class))
-    
     if bec_decoder:
-        print(frame_error_rate(graph, C, symbols, motifs, n_picks, iterations=100, bec_decode=True, label='BEC Decoder'))
+        print(decoding_errors_fer(k, n, dv, dc, graph, C, symbols, motifs, n_picks, iterations=iterations, bec_decoder=True, label='Erasure Decoder', code_class=code_class, read_lengths=read_lengths))
     
     if uncoded:
-        print(frame_error_rate(graph, C, symbols, motifs, n_picks, iterations=100, uncoded=True, label='Uncoded'))
+        print(decoding_errors_fer(k, n, dv, dc, graph, C, symbols, motifs, n_picks, iterations=iterations, uncoded=True, label='Uncoded', code_class=code_class, read_lengths=read_lengths))
     
-    plt.xticks(np.arange(1, 19, 1))
+    
+    print(decoding_errors_fer(k, n, dv, dc, graph, C, symbols, motifs, n_picks, iterations=iterations, label=f'CC Decoder', code_class=code_class, read_lengths=read_lengths))
+    
+    graph, C, symbols, motifs = get_parameters_sc_ldpc(n_motifs, n_picks, L, M, dv, dc, k, n, ffdim, display=False, Harr=Harr, H=H, G=G)
+    print(decoding_errors_fer(k, n, dv, dc, graph, C, symbols, motifs, n_picks, iterations=iterations, label=f'SC_LDPC', code_class=code_class, read_lengths=read_lengths))
+    
     plt.grid()
     plt.legend()
     plt.show()
@@ -346,10 +306,11 @@ if __name__ == "__main__":
     with Profile() as prof:
         n_motifs, n_picks = 8, 4
         dv, dc, ffdim = 3, 9, 67
-        k, n = 30, 45
-        L, M = 25, 25
+        k, n = 100, 150
+        L, M = 12, 21
         read_length = 6
-        run_fer(n_motifs, n_picks, dv, dc, k, n, L, M, ffdim, code_class="sc_", saved_code=False)
+        read_lengths = np.arange(1,20)
+        run_fer(n_motifs, n_picks, dv, dc, k, n, L, M, ffdim, code_class="", saved_code=False,  uncoded=True, bec_decoder=True, read_lengths=read_lengths)
     (
         Stats(prof)
         .strip_dirs()

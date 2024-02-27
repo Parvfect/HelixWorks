@@ -4,9 +4,12 @@ from more_itertools import distinct_permutations
 import galois
 import numpy as np
 from scipy.stats import multinomial
-
+from math import factorial
 import utils
 
+
+def multinomial_def(n, x, p):
+    return (factorial(n)/(np.prod([factorial(i) for i in x])))*(np.prod([p[j]**x[j] for j in range(len(x))]))
 
 def hw_likelihoods(k_motifs, codeword_noise, eps):
     """Get initial likelihoods for HelixWorks interference channel.
@@ -52,8 +55,7 @@ def hw_likelihoods(k_motifs, codeword_noise, eps):
     )
     likelihoods = []
     for symbol in alphabet:
-        mult = multinomial(n=R, p=prob_base + np.array(symbol) * prob_high)
-        likelihoods.append(mult.pmf(codeword_noise))
+        likelihoods.append(multinomial_def(n=R, x =codeword_noise, p=prob_base + np.array(symbol) * prob_high))
 
     likelihoods.reverse()
     return likelihoods
