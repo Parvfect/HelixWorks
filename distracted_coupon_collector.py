@@ -156,10 +156,12 @@ def get_symbol_likelihood(n_picks, motif_occurences, P, pop=True):
         likelihoods.pop()
         likelihoods.pop()
 
-    # Re-normalising
-    norm_factor = 1/sum(likelihoods)
-    likelihoods = [norm_factor*i for i in likelihoods]
-
+    if sum(likelihoods) == 0: # Prevent divide by zero
+        likelihoods = list(np.ones(67)/67)
+    else:
+        norm_factor = 1/sum(likelihoods)
+        likelihoods = [norm_factor*i for i in likelihoods]
+        
     # Precision - summing up to 0.9999999999999997
     assert sum(likelihoods) >= 0.99 and sum(likelihoods) < 1.01
 
@@ -218,7 +220,7 @@ def simulate(Harr, GFH, GFK, symbols, P, n_code, k, read_length=10, max_iter=10,
     else:
         decoder = QSPADecoder(n_code, m_checks, GF, GFH)
         # Will have to replace that max Iter with the break condition that we had before
-        z = decoder.decode(symbol_likelihoods_arr, max_iter=max_iter)
+        z = decoder.decode(symbol_likelihoods_arr   )
         
     return np.array_equal(C, z)
 
@@ -238,8 +240,11 @@ def decoding_errors_fer(k, n, dv, dc, H, G, GF, graph, C, symbols, n_motifs, n_p
                 graph.assign_values(symbol_likelihoods_arr)
                 z = graph.qspa_decoding(H, GF)
             else:
-                z = decoder.decode(symbol_likelihoods_arr, max_iter=10)
-    
+                z = decoder.decode(symbol_likelihoods_arr, max_iter=20)
+            
+            #print(C)
+            #print(z)
+
             if np.array_equal(C, z):
                 counter += 1
             else: 
@@ -294,18 +299,17 @@ if __name__ == "__main__":
     with Profile() as prof:
         n_motifs, n_picks = 8, 4
         dv, dc, ffdim, P = 3, 9, 67, 0.02
-        k, n = 100, 150
-        L, M = 20, 102
+        k, n = 480, 720
+        L, M = 20, 36
         read_length = 6
-        read_lengths = np.arange(8,10)
+        read_lengths = np.arange(12, 13)
+
         
         #run_fer(n_motifs, n_picks, dv, dc, k, n, L, M, ffdim, P, code_class="",  uncoded=False, zero_codeword=False, bec_decoder=False, graph_decoding=False, read_lengths=read_lengths)
-        run_fer(n_motifs, n_picks, dv, dc, k, n, L, M, ffdim, P, code_class="sc_",  uncoded=False, zero_codeword=True, bec_decoder=False, graph_decoding=True, read_lengths=read_lengths)
+        run_fer(n_motifs, n_picks, dv, dc, k, n, L, M, ffdim, P, code_class="",  uncoded=False, zero_codeword=True, bec_decoder=False, graph_decoding=True, read_lengths=read_lengths)
     (
         Stats(prof)
         .strip_dirs()
         .sort_stats("cumtime")
         .print_stats(10)
     )
-
-    

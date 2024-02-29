@@ -10,8 +10,8 @@ import numpy as np
 from itertools import combinations
 from experiment_pipeline.dependencies import create_mask, invert_mask, find_I_columns
 import ast
-from distracted_coupon_collector import choose_symbols
-from qspa_decoder_interface import get_symbol_likelihood
+from dcc_commented import choose_symbols
+from distracted_coupon_collector import get_symbol_likelihood
 from tanner import VariableTannerGraph
 from tqdm import tqdm
 import os

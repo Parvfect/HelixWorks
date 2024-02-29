@@ -2,17 +2,128 @@ from collections import defaultdict
 from more_itertools import distinct_permutations
 
 import galois
+import math
 import numpy as np
 from scipy.stats import multinomial
-from math import factorial
+
 import utils
-import math
 
 
-def multinomial_def(n, x, p):
-    return (factorial(n)/(np.prod([factorial(i) for i in x])))*(np.prod([p[j]**x[j] for j in range(len(x))]))
+def hw_likelihoods(k_motifs, codeword_noise, eps):
+    """Get initial likelihoods for HelixWorks interference channel.
 
-def hw_likelihoods(k_motifs, codeword_noise, eps, threshold=1e10):
+    Each symbol in the alphabet consists of a set of k_motifs out of n_motifs
+    possible options. We represent a symbol as an array (x_1, ..., x_n_motifs)
+    where xᵢ ∈ {0,1} and ∑ xᵢ = k_motifs. We consider a lexicographical order
+    for all symbols X (written from left to right).
+
+    The received codeword is represented as an array (y_1, ..., y_n_motifs)
+    where ∑ yᵢ = R and R is the number of reads. The meaning of yᵢ is how many
+    times (out of R in total) motif i was read. The likelihood P(Y | X) is
+    computed using a multinomial PMF.
+
+    Parameters
+    ----------
+    k_motifs: int
+        Number of motifs that are chosen to create a "symbol".
+    codeword_noise: array (n_motifs, )
+        Stores the number of reads of each one of the n total motifs.
+    eps: float
+        Interference probability.
+
+    Returns
+    -------
+    likelihoods: array (n_motifs choose k_motifs, )
+        Non-normalized likelihood for all symbols (in lexicographical order).
+
+    >>> eps = 0.05
+    >>> k_motifs = 2
+    >>> codeword_noise = [10, 1, 7, 2]
+    >>> hw_likelihoods(k_motifs, codeword_noise, eps)
+    """
+    n_motifs = len(codeword_noise)
+    R = sum(codeword_noise)
+
+    prob_base = np.ones(n_motifs) * eps / n_motifs
+    prob_high = (1 - eps) / k_motifs
+
+    alphabet = distinct_permutations(
+        [0] * (n_motifs - k_motifs) + [1] * k_motifs,
+        r=n_motifs
+    )
+    likelihoods = []
+    for symbol in alphabet:
+        mult = multinomial(n=R, p=prob_base + np.array(symbol) * prob_high)
+        likelihoods.append(mult.pmf(codeword_noise))
+
+    likelihoods.reverse()
+    return likelihoods / sum(likelihoods)
+
+
+def hw_likelihoods_v1(k_motifs, codeword_noise, eps, subtract_min=True):
+    """Get initial likelihoods for HelixWorks interference channel.
+
+    Each symbol in the alphabet consists of a set of k_motifs out of n_motifs
+    possible options. We represent a symbol as an array (x_1, ..., x_n_motifs)
+    where xᵢ ∈ {0,1} and ∑ xᵢ = k_motifs. We consider a lexicographical order
+    for all symbols X (written from left to right).
+
+    The received codeword is represented as an array (y_1, ..., y_n_motifs)
+    where ∑ yᵢ = R and R is the number of reads. The meaning of yᵢ is how many
+    times (out of R in total) motif i was read. The likelihood P(Y | X) is
+    computed using the formula for the multinomial PMF, without the denominator
+    (in order to prevent the computed likelihood being too small).
+
+    Parameters
+    ----------
+    k_motifs: int
+        Number of motifs that are chosen to create a "symbol".
+    codeword_noise: array (n_motifs, )
+        Stores the number of reads of each one of the n total motifs.
+    eps: float
+        Interference probability.
+    subtract_min: bool
+        If True, remove common factor from the numerator.
+
+    Returns
+    -------
+    likelihoods: array (n_motifs choose k_motifs, )
+        Non-normalized likelihood for all symbols (in lexicographical order).
+
+    >>> eps = 0.05
+    >>> k_motifs = 2
+    >>> codeword_noise = [10, 1, 7, 2]
+    >>> hw_likelihoods_v1(k_motifs, codeword_noise, eps)
+    """
+    n_motifs = len(codeword_noise)
+    R = sum(codeword_noise)
+
+    prob_base = eps / n_motifs
+    prob_high = (1 - eps) / k_motifs
+
+    alphabet = distinct_permutations(
+        [0] * (n_motifs - k_motifs) + [1] * k_motifs,
+        r=n_motifs
+    )
+    likelihoods = []
+    for symbol in alphabet:
+        reads_high = sum(np.array(symbol) * codeword_noise)
+        reads_base = R - reads_high
+        if subtract_min:
+            m = min(codeword_noise)
+            reads_high = reads_high - m * k_motifs
+            reads_base = reads_base - m * (n_motifs - k_motifs)
+        likelihoods.append(
+            math.factorial(R)
+            * pow(prob_base, reads_base)
+            * pow(prob_base + prob_high, reads_high)
+        )
+
+    likelihoods.reverse()
+    return likelihoods / sum(likelihoods)
+
+
+def hw_likelihoods_v2(k_motifs, codeword_noise, eps, threshold=1e10):
     """Get initial likelihoods for HelixWorks interference channel.
 
     Each symbol in the alphabet consists of a set of k_motifs out of n_motifs
@@ -99,63 +210,13 @@ def hw_likelihoods(k_motifs, codeword_noise, eps, threshold=1e10):
     likelihoods = likelihoods[idx_original]
     likelihoods = np.flip(likelihoods)
 
-    return list(likelihoods / sum(likelihoods))
-
-
-def hw_likelihoods_old(k_motifs, codeword_noise, eps):
-    """Get initial likelihoods for HelixWorks interference channel.
-
-    Each symbol in the alphabet consists of a set of k_motifs out of n_motifs
-    possible options. We represent a symbol as an array (x_1, ..., x_n_motifs)
-    where xᵢ ∈ {0,1} and ∑ xᵢ = k_motifs. We consider a lexicographical order
-    for all symbols X (written from left to right).
-
-    The received codeword is represented as an array (y_1, ..., y_n_motifs)
-    where ∑ yᵢ = R and R is the number of reads. The meaning of yᵢ is how many
-    times (out of R in total) motif i was read. The likelihood P(Y | X) is
-    computed using a multinomial PMF.
-
-    Parameters
-    ----------
-    k_motifs: int
-        Number of motifs that are chosen to create a "symbol".
-    codeword_noise: array (n_motifs, )
-        S[i, j, :] stores messages from CN i to VN j.
-    eps: float
-        Interference probability.
-
-    Returns
-    -------
-    likelihoods: array (n_motifs choose k_motifs, )
-        Non-normalized likelihood for each symbols (in lexicographical order).
-
-    >>> eps = 0.05
-    >>> k_motifs = 2
-    >>> codeword_noise = [10, 1, 7, 2]
-    >>> hw_likelihoods(k_motifs, codeword_noise, eps)
-    """
-    n_motifs = len(codeword_noise)
-    R = sum(codeword_noise)
-
-    prob_base = np.ones(n_motifs) * eps / n_motifs
-    prob_high = (1 - eps) / k_motifs
-
-    alphabet = distinct_permutations(
-        [0] * (n_motifs - k_motifs) + [1] * k_motifs,
-        r=n_motifs
-    )
-    likelihoods = []
-    for symbol in alphabet:
-        likelihoods.append(multinomial_def(n=R, x =codeword_noise, p=prob_base + np.array(symbol) * prob_high))
-
-    likelihoods.reverse()
-    return likelihoods
+    return likelihoods / sum(likelihoods)
 
 
 class QSPADecoder:
     """Class implementing QSPA Decoder described in [1].
     
-    [1] Ryan, William, and Shu Lin. Channel Codes: Classical an` Modern (2009).
+    [1] Ryan, William, and Shu Lin. Channel Codes: Classical and Modern (2009).
     """
 
     def __init__(self, n, m, GF, GFH):
@@ -195,7 +256,7 @@ class QSPADecoder:
             nonzero_rows[k] = np.array(v)
         return nonzero_cols, nonzero_rows
 
-    def decode(self, P, max_iter=50):
+    def decode(self, P, max_iter):
         """QSPA Decoder main loop.
         
         Parameters
@@ -214,28 +275,19 @@ class QSPADecoder:
         Q = np.zeros(shape=(self.m, self.n, self.GF.order))
         S = np.zeros(shape=(self.m, self.n, self.GF.order))
 
-        # Initializes Variable Nodes with the Likelihoods
         Q = self.initialize_Q_msgs(P, Q)
-        
-        prev_z = self.decode_hard(P,S)
-
         for it in range(max_iter):
-            #print(f'Decoding: iteration {it + 1}')
+            print(f'Decoding: iteration {it + 1}')
             S = self.update_S_msgs(Q, S)
             z = self.decode_hard(P, S)
-            
+
             parity = not np.matmul(self.GFH, z).any()
             if parity:
-                print(f'Decoding successful! Iteration {it + 1}')
+                print('Decoding successful!')
                 return z
             else:
                 Q = self.update_Q_msgs(P, Q, S)
-
-            if np.array_equal(z, prev_z):
-                break
-            
-            prev_z = z
-        #print('Decoding unsuccessful! Max. iterations done')
+        print('Decoding unsuccessful! Max. iterations done')
 
     def initialize_Q_msgs(self, P, Q):
         """Initialize messages from variable nodes (VN) to check nodes (CN).
@@ -260,51 +312,33 @@ class QSPADecoder:
 
     def update_S_msgs(self, Q, S):
         """Update S messages following algorithm in [1]."""
-       
-        #Q_ = self._shift_Q_msgs(Q)
-        Q_ = Q
+        Q_ = self._shift_Q_msgs(Q)
 
         S_ = np.zeros(shape=(self.m, self.n, self.GF.order))
         for i in range(self.m):
             idxs = self.nonzero_cols[i]
-
             for j in idxs:
-
-                # Remove val equivalent
                 conv_idxs = idxs[idxs != j]
-
-                # For some reason does first convolution
                 aux = self._conv_circ(
                     Q_[i, conv_idxs[0], :],
                     Q_[i, conv_idxs[1], :]
                 )
-
-                # Rest of the convolutions
                 for t in conv_idxs[2:]:
                     aux = self._conv_circ(aux, Q_[i, t, :])
-                
-                # Becomes the additive inverse of that I is confused
                 S_[i, j, :] = aux[self.idx_shuffle]
 
-        #S = self._shift_S_msgs(S, S_)
-        return S_
+        S = self._shift_S_msgs(S, S_)
+        return S
 
     def update_Q_msgs(self, P, Q, S):
         """Update Q messages following algorithm in [1]."""
-
-        # Got to understand the parity equivalent
         for a in range(self.GF.order):
             for j in range(self.n):
                 idxs = self.nonzero_rows[j]
                 for i in idxs:
-                    # Initial Likelihoods
                     Q[i, j, a] = 1 * P[j, a]
-
-                    # Don't understand this step - has to do with CN update
                     for t in idxs[idxs != i]:
                         Q[i, j, a] *= S[t, j, a]
-
-                    # Normalization
                     Q[i, j, :] /= sum(Q[i, j, :])
         return Q
 
@@ -383,17 +417,17 @@ class QSPADecoder:
         return np.real(np.fft.ifft(np.fft.fft(u) * np.fft.fft(v)))
 
 
-def test():
-    """
+if __name__ == '__main__':
+    '''
     Test QSPA decoder for a simple channel that adds +1 to each symbol in
     codeword with probability 1 - eps = 0.05 in example.
-    """
+    '''
     n_code = 16
     GF = galois.GF(3)
 
     # Get binary parity-check matrix using Gallager's algorithm.
     H = utils.parity_check_matrix(n_code, d_v=3, d_c=4)
-    m_checks = H.shape[0] # n-k = m - number of check nodes
+    m_checks = H.shape[0]
     density = sum(sum(H)) / (H.shape[0] * H.shape[1])
     print(f'Density of parity-check matrix: {density}')
 
@@ -408,9 +442,11 @@ def test():
     eps = 0.95
     codeword = np.matmul(GFK.T, GF.Random(GFK_dim))
 
+
     def transmit(w):
         noise = GF((np.random.uniform(0, 1, n_code) > eps).astype(int))
         return w + noise
+
 
     codeword_noise = transmit(codeword)
     while np.array_equal(codeword, codeword_noise):
@@ -435,7 +471,3 @@ def test():
     decoder = QSPADecoder(n_code, m_checks, GF, GFH)
     z = decoder.decode(P, max_iter=10)
     assert np.array_equal(codeword, z)
-
-
-if __name__ == '__main__':
-    test()

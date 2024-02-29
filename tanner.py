@@ -40,7 +40,7 @@ def perform_convolutions(arr_pd):
     """ Combines all the Probability distributions within the array using the Convolution operator
     
     Args:
-        arr_pd (arr): Array of Discrete Probability Distributions
+        arr_pd (arr): Array of Discrete P   robability Distributions
     
     Returns:
         conv_pd (arr): Combined Probability Distributions after taking convolution over all of the pdf
@@ -299,12 +299,14 @@ class VariableTannerGraph:
                     for t in j.links[j.links!=i]:
                         copy_links[(i,vn_index)][a] *= self.get_link_weight(t, vn_index)[a]
 
+                    sum_copy_links = np.einsum('i->', copy_links[i, vn_index]) # Seems to be twice as fast or smth
+                    #sum_copy_links = np.sum(copy_links[i, vn_index])
                     sum_copy_links = sum(copy_links[i, vn_index])
                     copy_links[i, vn_index] = copy_links[i, vn_index]/sum_copy_links
                     
         self.links = copy_links
 
-    def qspa_decoding(self, H, GF, max_iterations=10):
+    def qspa_decoding(self, H, GF, max_iterations=50):
 
         self.GF = GF
               
@@ -319,9 +321,12 @@ class VariableTannerGraph:
         self.initialize_vn_links(self.P)
         
         copy_links = self.links.copy()
-        max_prob_codeword = self.get_max_prob_codeword(self.P, GF)
+        prev_max_prob_codeword = self.get_max_prob_codeword(self.P, GF)
 
-        for i in range(max_iterations):
+        iterations = 0
+
+        #for i in range(max_iterations):
+        while(True):
             
             self.vn_update_qspa()
 
@@ -331,7 +336,15 @@ class VariableTannerGraph:
                 return max_prob_codeword
 
             self.cn_update_qspa()
-        
+
+            if np.array_equal(max_prob_codeword, prev_max_prob_codeword) or iterations > max_iterations:
+                break
+            
+            prev_max_prob_codeword = max_prob_codeword
+
+            iterations+=1
+            print(f"Iteration {iterations}")
+
         print("Decoding does not converge")
         return max_prob_codeword
     

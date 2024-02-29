@@ -218,7 +218,7 @@ def run_singular_decoding(graph, C, read_length, symbols, motifs, n_picks):
         print("Decoding unsuccessful")
         return None
 
-def decoding_errors_fer(k, n, dv, dc, graph, C, symbols, motifs, n_picks, decoding_failures_parameter=10, max_iterations=100, iterations=50, uncoded=False, bec_decoder=False, label=None, code_class="", read_lengths=np.arange(1,20)):
+def decoding_errors_fer(k, n, dv, dc, graph, C, symbols, motifs, n_picks, decoding_failures_parameter=10, max_iterations=10000, iterations=50, uncoded=False, bec_decoder=False, label=None, code_class="", read_lengths=np.arange(1,20)):
     """ Returns the frame error rate curve - for same H, same G, same C"""
 
     frame_error_rate = []
@@ -278,9 +278,9 @@ def run_fer(n_motifs, n_picks, dv, dc, k, n, L, M, ffdim, code_class="", iterati
         Harr, H, G = get_saved_code(dv, dc, k, n, L, M, code_class=code_class)
     
     if code_class == "sc_":
-        graph, C, symbols, motifs = get_parameters_sc_ldpc(n_motifs, n_picks, L, M, dv, dc, k, n, ffdim, display=False, Harr=Harr, H=H, G=G)
+        graph, C, symbols, motifs = get_parameters_sc_ldpc(n_motifs, n_picks, L, M, dv, dc, k, n, ffdim, display=False)
     else:
-        graph, C, symbols, motifs = get_parameters(n_motifs, n_picks, dv, dc, k, n, ffdim, display=True, Harr =Harr, H=H, G=G)
+        graph, C, symbols, motifs = get_parameters(n_motifs, n_picks, dv, dc, k, n, ffdim, display=True)
     
     if singular_decoding:
         run_singular_decoding(graph, C, 8, symbols, motifs, n_picks)
@@ -291,11 +291,7 @@ def run_fer(n_motifs, n_picks, dv, dc, k, n, L, M, ffdim, code_class="", iterati
     if uncoded:
         print(decoding_errors_fer(k, n, dv, dc, graph, C, symbols, motifs, n_picks, iterations=iterations, uncoded=True, label='Uncoded', code_class=code_class, read_lengths=read_lengths))
     
-    
     print(decoding_errors_fer(k, n, dv, dc, graph, C, symbols, motifs, n_picks, iterations=iterations, label=f'CC Decoder', code_class=code_class, read_lengths=read_lengths))
-    
-    graph, C, symbols, motifs = get_parameters_sc_ldpc(n_motifs, n_picks, L, M, dv, dc, k, n, ffdim, display=False, Harr=Harr, H=H, G=G)
-    print(decoding_errors_fer(k, n, dv, dc, graph, C, symbols, motifs, n_picks, iterations=iterations, label=f'SC_LDPC', code_class=code_class, read_lengths=read_lengths))
     
     plt.grid()
     plt.legend()
@@ -307,10 +303,10 @@ if __name__ == "__main__":
         n_motifs, n_picks = 8, 4
         dv, dc, ffdim = 3, 9, 67
         k, n = 100, 150
-        L, M = 12, 21
+        L, M = 50, 1002
         read_length = 6
-        read_lengths = np.arange(1,20)
-        run_fer(n_motifs, n_picks, dv, dc, k, n, L, M, ffdim, code_class="", saved_code=False,  uncoded=True, bec_decoder=True, read_lengths=read_lengths)
+        read_lengths = np.arange(4,5)
+        run_fer(n_motifs, n_picks, dv, dc, k, n, L, M, ffdim, code_class="sc_", saved_code=False,  uncoded=False, bec_decoder=False, read_lengths=read_lengths)
     (
         Stats(prof)
         .strip_dirs()
