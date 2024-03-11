@@ -271,7 +271,7 @@ class VariableTannerGraph:
         for i,j in enumerate(cn.links):
             self.update_link_weight(cn_index, j, new_vals[i])
 
-    def vn_update_qspa(self):
+    def cn_update_qspa(self):
         """ VN Update for the QSPA Decoder. For each CN, performs convolutions for individual VN's as per the remaining links and updates the individual link values after finishing each link. Repeats for all the CN's """
         
         for i in self.cns:
@@ -279,7 +279,7 @@ class VariableTannerGraph:
             vns = i.links
             new_pdfs = []
             for j in vns:
-                conv_indices = vns[vns!=j]
+                conv_indices = [idx for idx in vns if idx != j]
                 vals = [self.get_link_weight(cn_index, t) for t in conv_indices]
                 pdf = perform_convolutions(vals)
                 new_pdfs.append(pdf[self.idx_shuffle])
@@ -287,7 +287,7 @@ class VariableTannerGraph:
             self.update_cn_links(i, new_pdfs)
             
 
-    def cn_update_qspa(self):
+    def vn_update_qspa(self):
         """ Updates the CN as per the QSPA Decoding. Conditional Probability of a Symbol being favoured yadayada """
 
         copy_links = self.links.copy()
@@ -301,7 +301,7 @@ class VariableTannerGraph:
 
                     sum_copy_links = np.einsum('i->', copy_links[i, vn_index]) # Seems to be twice as fast or smth
                     #sum_copy_links = np.sum(copy_links[i, vn_index])
-                    sum_copy_links = sum(copy_links[i, vn_index])
+                    #sum_copy_links = sum(copy_links[i, vn_index])
                     copy_links[i, vn_index] = copy_links[i, vn_index]/sum_copy_links
                     
         self.links = copy_links
@@ -321,21 +321,23 @@ class VariableTannerGraph:
         self.initialize_vn_links(self.P)
         
         copy_links = self.links.copy()
-        prev_max_prob_codeword = self.get_max_prob_codeword(self.P, GF)
+        prev_max_prob_codeword = None
 
         iterations = 0
 
         #for i in range(max_iterations):
         while(True):
             
-            self.vn_update_qspa()
+            self.cn_update_qspa()
 
             max_prob_codeword = self.get_max_prob_codeword(self.P, GF)
-            if self.validate_codeword(H, GF, max_prob_codeword):
+
+            parity = not np.matmul(H, max_prob_codeword).any()
+            if parity:
                 print("Decoding converges")
                 return max_prob_codeword
 
-            self.cn_update_qspa()
+            self.vn_update_qspa()
 
             if np.array_equal(max_prob_codeword, prev_max_prob_codeword) or iterations > max_iterations:
                 break

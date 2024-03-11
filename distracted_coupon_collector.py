@@ -298,18 +298,18 @@ def run_fer(n_motifs, n_picks, dv, dc, k, n, L, M, ffdim, P, code_class="", iter
 if __name__ == "__main__":
     with Profile() as prof:
         n_motifs, n_picks = 8, 4
-        dv, dc, ffdim, P = 3, 9, 67, 0.02
-        k, n = 480, 720
+        dv, dc, ffdim, P = 3, 9, 67, 2 * 0.038860387943791645
+        k, n = 16, 24
         L, M = 20, 36
         read_length = 6
         read_lengths = np.arange(12, 13)
 
         
-        #run_fer(n_motifs, n_picks, dv, dc, k, n, L, M, ffdim, P, code_class="",  uncoded=False, zero_codeword=False, bec_decoder=False, graph_decoding=False, read_lengths=read_lengths)
+        #run_fer(n_motifs, n_picks, dv, dc, k, n, L, M, ffdim, P, code_class="sc_",  uncoded=False, zero_codeword=True, bec_decoder=False, graph_decoding=False, read_lengths=read_lengths)
         run_fer(n_motifs, n_picks, dv, dc, k, n, L, M, ffdim, P, code_class="",  uncoded=False, zero_codeword=True, bec_decoder=False, graph_decoding=True, read_lengths=read_lengths)
     (
         Stats(prof)
         .strip_dirs()
         .sort_stats("cumtime")
         .print_stats(10)
-    )
+    )                                                                                                                                                                                 
