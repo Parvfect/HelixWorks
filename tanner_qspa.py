@@ -10,7 +10,22 @@ class TannerQSPA(VariableTannerGraph):
         self.vn_links = {}
         self.cn_links = {}
 
-    def decode(self, symbols_likelihood_arr, H, GF, max_iterations=50):
+    def initialize_vn_links(self, P):
+        """ Sets all the links from a VN to the VN initial likelihood array """
+        for vn in self.vns:
+            vn_index = vn.identifier
+            for cn_index in vn.links:
+                self.vn_links[(cn_index, vn_index)] = P[vn_index]
+
+    def initialize_cn_links(self):
+        """ Initializes CN Links"""
+        for cn in self.cns:
+            cn_index = cn.identifier
+            for vn_index in cn.links:
+                self.cn_links[(cn_index, vn_index)] = 0
+        
+    def decode(self, symbol_likelihood_arr, H, GF, max_iterations=50):
+        """Decodes using QSPA """
 
         self.GF = GF
                 
@@ -20,7 +35,7 @@ class TannerQSPA(VariableTannerGraph):
         ])
         
         # Setting the VN Links with the initial symbol likelihoods
-        self.initialize_vn_links(self.P)
+        self.initialize_vn_links(symbol_likelihood_arr)
 
         # Initilizing the CN Links
         self.initialize_cn_links()
@@ -60,61 +75,81 @@ class TannerQSPA(VariableTannerGraph):
         Returns:
             codeword (arr): n length most probable codeword with symbols
         """
+        
+        # Initialize Empty Array
         z = np.zeros(self.n)
-        for j in self.vns:
-            vn_index = j.identifier
+        
+        # Iterate Through all the VNs
+        for vn in self.vns:
+        
+            vn_index = vn.identifier
             probs = 1 * P[vn_index]
+            
+            # Iterate Through Each Symbol Possibility
             for a in range(GF.order):
-                for i in j.links:
-                    probs[a] *= self.get_cn_link_weight(i, vn_index)[a]
-            z[vn_index] = np.argmax(probs) 
-        z = GF(z.astype(int))
-        return z
+                
+                # Iterate Through all the CNs connected
+                for cn in vn.links:
 
-    def initialize_vn_links(self, P):
-        """ Sets all the links from a VN to the VN initial likelihood array """
-        for i in self.vns:
-            vn_index = i.identifier
-            for j in i.links:
-                self.update_link_weight(j, vn_index, 1*P[vn_index])
+                    # Update Symbol Probability as product of the CN Message
+                    probs[a] *= self.get_cn_link_weight(cn, vn_index)[a]
+            
+            # Most likely symbol is the Symbol with the highest probability
+            z[vn_index] = np.argmax(probs) 
+        
+        return GF(z.astype(int))
+
+    
 
     def cn_update_qspa(self):
         """ CN Update for the QSPA Decoder. For each CN, performs convolutions for individual VN's as per the remaining links and updates the individual link values after finishing each link. Repeats for all the CN's """
         
-        #Update CN links using VN Links
+        # Iterate through all the CNs
+        for cn in self.cns:
 
-        for i in self.cns:
-            cn_index = i.identifier
-            vns = i.links
-            new_pdfs = []
-            for j in vns:
-                conv_indices = [idx for idx in vns if idx != j]
+            cn_index = cn.identifier
+            vns = cn.links
+            
+            # Iterating through all the VN Links of the Check node
+            for vn in vns:
+
+                # Getting all the remaining VNS
+                conv_indices = [idx for idx in vns if idx != vn]
+
+                # Getting convolution of all the vns
                 pdf = conv_circ(self.get_vn_link_weight(cn_index, conv_indices[0]), self.get_vn_link_weight(cn_index, conv_indices[1]))
                 for indice in conv_indices[2:]:
                     pdf = conv_circ(pdf, self.get_vn_link_weight(cn_index, indice))
                 #new_pdfs.append(pdf[self.idx_shuffle])
-                self.update_cn_link_weight(i,j,pdf[self.idx_shuffle]) 
+
+                # Updating the CN Link weight with the conv value
+                self.cn_links[(cn_index, vn)] = pdf[self.idx_shuffle]
 
     def vn_update_qspa(self):
         """ Updates the CN as per the QSPA Decoding. Conditional Probability of a Symbol being favoured yadayada """
 
         # Use the CN links to update the VN links by taking the favoured probabilities
-
-        copy_links = self.links.copy()
-        for a in range(self.GF.order):
-            for j in self.vns:
-                vn_index = j.identifier
-                for i in j.links:
-                    copy_links[(i, vn_index)][a] = self.P[vn_index][a]
-                    for t in j.links[j.links!=i]:
-                        copy_links[(i,vn_index)][a] *= self.get_link_weight(t, vn_index)[a]
-
-                    sum_copy_links = np.einsum('i->', copy_links[i, vn_index]) # Seems to be twice as fast or smth
-                    #sum_copy_links = np.sum(copy_links[i, vn_index])
-                    #sum_copy_links = sum(copy_links[i, vn_index])
-                    copy_links[i, vn_index] = copy_links[i, vn_index]/sum_copy_links
-                    
-        self.links = copy_links
         
+        # Iterating through all the Symbols
+        for a in range(self.GF.order):
+
+            # For each VN
+            for vn in self.vns:
+                vn_index = vn.identifier
+                
+                for cn in vn.links:
+                    
+                    self.vn_links[(cn, vn_index)][a] = self.P[vn_index][a]
+
+                    for t in vn.links:
+
+                        if t == cn:
+                            continue
+
+                        self.vn_links[(cn, vn_index)][a] *= self.cn_links[(t, vn_index)][a]
+
+                    sum_copy_links = np.einsum('i->', self.vn_links[(cn, vn_index)]) # Seems to be twice as fast or smth
+                    self.vn_links[(cn, vn_index)] = self.vn_links[(cn, vn_index)]/sum_copy_links
+                    
 
 
