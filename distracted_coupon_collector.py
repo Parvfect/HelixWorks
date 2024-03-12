@@ -220,12 +220,12 @@ def simulate(Harr, GFH, GFK, symbols, P, n_code, k, read_length=10, max_iter=10,
     else:
         decoder = QSPADecoder(n_code, m_checks, GF, GFH)
         # Will have to replace that max Iter with the break condition that we had before
-        z = decoder.decode(symbol_likelihoods_arr   )
+        z = decoder.decode(symbol_likelihoods_arr)
         
     return np.array_equal(C, z)
 
 
-def decoding_errors_fer(k, n, dv, dc, H, G, GF, graph, C, symbols, n_motifs, n_picks, decoder=None, decoding_failures_parameter=5, max_iterations=5, iterations=50, uncoded=False, bec_decoder=False, label=None, code_class="", read_lengths=np.arange(1,20)):
+def decoding_errors_fer(k, n, dv, dc, P, H, G, GF, graph, C, symbols, n_motifs, n_picks, decoder=None, decoding_failures_parameter=5, max_iterations=10, iterations=50, uncoded=False, bec_decoder=False, label=None, code_class="", read_lengths=np.arange(1,20)):
 
     frame_error_rate = []
     max_iterations = max_iterations
@@ -237,8 +237,7 @@ def decoding_errors_fer(k, n, dv, dc, H, G, GF, graph, C, symbols, n_motifs, n_p
             symbol_likelihoods_arr = np.array(simulate_reads(C, symbols, i, P, n_motifs, n_picks))
 
             if not decoder:
-                graph.assign_values(symbol_likelihoods_arr)
-                z = graph.qspa_decoding(H, GF)
+                z = graph.qspa_decoding(symbol_likelihoods_arr, H, GF)
             else:
                 z = decoder.decode(symbol_likelihoods_arr, max_iter=20)
             
@@ -285,10 +284,10 @@ def run_fer(n_motifs, n_picks, dv, dc, k, n, L, M, ffdim, P, code_class="", iter
     GFK = GF(G.astype(int))
 
     if graph_decoding:
-        decoding_errors_fer(k, n, dv, dc, GFH, GFK, GF, graph, C, symbols, n_motifs, n_picks, label="Graph QSPA", read_lengths=read_lengths)        
+        decoding_errors_fer(k, n, dv, dc, P, GFH, GFK, GF, graph, C, symbols, n_motifs, n_picks, label="Graph QSPA", read_lengths=read_lengths)        
     else:
         decoder = QSPADecoder(n, n-k, GF, GFH)
-        decoding_errors_fer(k, n, dv, dc, GFH, GFK, GF, graph, C, symbols, n_motifs, n_picks, decoder=decoder, label="Matrice QSPA", read_lengths=read_lengths)    
+        decoding_errors_fer(k, n, dv, dc, P, GFH, GFK, GF, graph, C, symbols, n_motifs, n_picks, decoder=decoder, label="Matrice QSPA", read_lengths=read_lengths)    
 
     plt.legend()
     plt.grid()
@@ -299,13 +298,13 @@ if __name__ == "__main__":
     with Profile() as prof:
         n_motifs, n_picks = 8, 4
         dv, dc, ffdim, P = 3, 9, 67, 2 * 0.038860387943791645
-        k, n = 16, 24
+        k, n = 10, 15
         L, M = 20, 36
         read_length = 6
         read_lengths = np.arange(12, 13)
 
-        
-        #run_fer(n_motifs, n_picks, dv, dc, k, n, L, M, ffdim, P, code_class="sc_",  uncoded=False, zero_codeword=True, bec_decoder=False, graph_decoding=False, read_lengths=read_lengths)
+
+        #run_fer(n_motifs, n_picks, dv, dc, k, n, L, M, ffdim, P, code_class="",  uncoded=False, zero_codeword=True, bec_decoder=False, graph_decoding=False, read_lengths=read_lengths)
         run_fer(n_motifs, n_picks, dv, dc, k, n, L, M, ffdim, P, code_class="",  uncoded=False, zero_codeword=True, bec_decoder=False, graph_decoding=True, read_lengths=read_lengths)
     (
         Stats(prof)

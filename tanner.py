@@ -272,7 +272,7 @@ class VariableTannerGraph:
             self.update_link_weight(cn_index, j, new_vals[i])
 
     def cn_update_qspa(self):
-        """ VN Update for the QSPA Decoder. For each CN, performs convolutions for individual VN's as per the remaining links and updates the individual link values after finishing each link. Repeats for all the CN's """
+        """ CN Update for the QSPA Decoder. For each CN, performs convolutions for individual VN's as per the remaining links and updates the individual link values after finishing each link. Repeats for all the CN's """
         
         for i in self.cns:
             cn_index = i.identifier
@@ -280,10 +280,12 @@ class VariableTannerGraph:
             new_pdfs = []
             for j in vns:
                 conv_indices = [idx for idx in vns if idx != j]
-                vals = [self.get_link_weight(cn_index, t) for t in conv_indices]
-                pdf = perform_convolutions(vals)
-                new_pdfs.append(pdf[self.idx_shuffle])
-                #self.update_link_weight(i,j,pdf[idx_shuffle]) 
+                pdf = conv_circ(self.get_link_weight(cn_index, conv_indices[0]), self.get_link_weight(cn_index, conv_indices[1]))
+                for indice in conv_indices[2:]:
+                    pdf = conv_circ(pdf, self.get_link_weight(cn_index, indice))
+                #new_pdfs.append(pdf[self.idx_shuffle])
+                #self.update_link_weight(i,j,pdf[self.idx_shuffle]) 
+        
             self.update_cn_links(i, new_pdfs)
             
 
@@ -306,7 +308,7 @@ class VariableTannerGraph:
                     
         self.links = copy_links
 
-    def qspa_decoding(self, H, GF, max_iterations=50):
+    def qspa_decoding(self, symbols_likelihood_arr, H, GF, max_iterations=50):
 
         self.GF = GF
               
@@ -316,19 +318,22 @@ class VariableTannerGraph:
         ])
         
         # Initial likelihoods
-        self.P = [i.value for i in self.vns]
+        self.P = symbols_likelihood_arr
 
-        self.initialize_vn_links(self.P)
         
         copy_links = self.links.copy()
-        prev_max_prob_codeword = None
+        prev_max_prob_codeword = self.get_max_prob_codeword(self.P, GF)
+
+        # Set copy links to intiialized values - or VN to cn links as opposed to CN to VN Links
+        self.initialize_vn_links(self.P)
+        
 
         iterations = 0
 
         #for i in range(max_iterations):
         while(True):
             
-            self.cn_update_qspa()
+            self.cn_update_qspa(copy_links)
 
             max_prob_codeword = self.get_max_prob_codeword(self.P, GF)
 
