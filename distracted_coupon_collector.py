@@ -14,6 +14,7 @@ from pstats import Stats
 import re
 from cProfile import Profile
 from coupon_collector import get_parameters, get_parameters_sc_ldpc
+from tanner_qspa import TannerQSPA
 
 def choose_symbols(n_motifs, picks):
     """Creates Symbol Array as a combination of Motifs
@@ -63,7 +64,8 @@ def get_parameters(n_motifs, n_picks, dv, dc, k, n, ffdim, zero_codeword=False, 
     
     symbol_keys = np.arange(0, ffdim)
 
-    graph = VariableTannerGraph(dv, dc, k, n, ffdim=ffdim)
+    #graph = VariableTannerGraph(dv, dc, k, n, ffdim=ffdim)
+    graph = TannerQSPA(dv, dc, k, n, ffdim=ffdim)
 
     if Harr is None:
         Harr = r.get_H_arr(dv, dc, k, n)
@@ -110,7 +112,8 @@ def get_parameters_sc_ldpc(n_motifs, n_picks, L, M, dv, dc, k, n, ffdim, zero_co
     else:
         dv, dc = get_dv_dc(dv, dc, k, n, Harr)
     
-    graph = VariableTannerGraph(dv, dc, k, n, ffdim=ffdim)
+    #graph = VariableTannerGraph(dv, dc, k, n, ffdim=ffdim)
+    graph = TannerQSPA(dv, dc, k, n, ffdim=ffdim)
     graph.establish_connections(Harr)
 
     if H is None and G is None:
@@ -193,39 +196,7 @@ def simulate_reads(C, symbols, read_length, P, n_motifs, n_picks):
 
     return likelihood_arr
 
-def simulate(Harr, GFH, GFK, symbols, P, n_code, k, read_length=10, max_iter=10, cc=False):
-
-    ffdim = 67
-    n_motifs, n_picks = 8, 4
-    dv, dc = 3, 9
-    
-    m_checks = GFH.shape[0]
-
-    GF = galois.GF(ffdim)
-
-    input_arr = [random.randint(0,66) for i in range(k)]
-    C = np.matmul(GF(input_arr), GFK)
-    #print(f"Codeword is \n{C}")
-
-    symbol_likelihoods_arr = np.array(simulate_reads(C, symbols, read_length, P, n_motifs, n_picks))
-    
-    assert symbol_likelihoods_arr.shape == (n_code, ffdim)
-    
-    if cc:
-        graph = VariableTannerGraph(dv, dc,k, n_code, ffdim=ffdim)
-        graph.establish_connections(Harr)
-        graph.assign_values(symbol_likelihoods_arr)
-        #z = graph.coupon_collector_decoding()
-        z = graph.qspa_decoding(GFH, GF)
-    else:
-        decoder = QSPADecoder(n_code, m_checks, GF, GFH)
-        # Will have to replace that max Iter with the break condition that we had before
-        z = decoder.decode(symbol_likelihoods_arr)
-        
-    return np.array_equal(C, z)
-
-
-def decoding_errors_fer(k, n, dv, dc, P, H, G, GF, graph, C, symbols, n_motifs, n_picks, decoder=None, decoding_failures_parameter=5, max_iterations=10, iterations=50, uncoded=False, bec_decoder=False, label=None, code_class="", read_lengths=np.arange(1,20)):
+def decoding_errors_fer(k, n, dv, dc, P, H, G, GF, graph, C, symbols, n_motifs, n_picks, decoder=None, decoding_failures_parameter=10, max_iterations=50, iterations=50, uncoded=False, bec_decoder=False, label=None, code_class="", read_lengths=np.arange(1,20)):
 
     frame_error_rate = []
     max_iterations = max_iterations
@@ -237,7 +208,7 @@ def decoding_errors_fer(k, n, dv, dc, P, H, G, GF, graph, C, symbols, n_motifs, 
             symbol_likelihoods_arr = np.array(simulate_reads(C, symbols, i, P, n_motifs, n_picks))
 
             if not decoder:
-                z = graph.qspa_decoding(symbol_likelihoods_arr, H, GF)
+                z = graph.qspa_decode(symbol_likelihoods_arr, H, GF)
             else:
                 z = decoder.decode(symbol_likelihoods_arr, max_iter=20)
             
@@ -298,14 +269,14 @@ if __name__ == "__main__":
     with Profile() as prof:
         n_motifs, n_picks = 8, 4
         dv, dc, ffdim, P = 3, 9, 67, 2 * 0.038860387943791645
-        k, n = 10, 15
-        L, M = 20, 36
+        k, n = 180, 270
+        L, M = 12, 36
         read_length = 6
-        read_lengths = np.arange(12, 13)
+        read_lengths = np.arange(7, 13)
 
 
-        #run_fer(n_motifs, n_picks, dv, dc, k, n, L, M, ffdim, P, code_class="",  uncoded=False, zero_codeword=True, bec_decoder=False, graph_decoding=False, read_lengths=read_lengths)
-        run_fer(n_motifs, n_picks, dv, dc, k, n, L, M, ffdim, P, code_class="",  uncoded=False, zero_codeword=True, bec_decoder=False, graph_decoding=True, read_lengths=read_lengths)
+        run_fer(n_motifs, n_picks, dv, dc, k, n, L, M, ffdim, P, code_class="",  uncoded=False, zero_codeword=False, bec_decoder=False, graph_decoding=False, read_lengths=read_lengths)
+        run_fer(n_motifs, n_picks, dv, dc, k, n, L, M, ffdim, P, code_class="",  uncoded=False, zero_codeword=False, bec_decoder=False, graph_decoding=True, read_lengths=read_lengths)
     (
         Stats(prof)
         .strip_dirs()
