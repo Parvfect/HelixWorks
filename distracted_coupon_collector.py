@@ -196,7 +196,7 @@ def simulate_reads(C, symbols, read_length, P, n_motifs, n_picks):
 
     return likelihood_arr
 
-def decoding_errors_fer(k, n, dv, dc, P, H, G, GF, graph, C, symbols, n_motifs, n_picks, decoder=None, decoding_failures_parameter=10, max_iterations=50, iterations=50, uncoded=False, bec_decoder=False, label=None, code_class="", read_lengths=np.arange(1,20)):
+def decoding_errors_fer(k, n, dv, dc, P, H, G, GF, graph, C, symbols, n_motifs, n_picks, decoder=None, decoding_failures_parameter=20, max_iterations=50, iterations=50, uncoded=False, bec_decoder=False, label=None, code_class="", read_lengths=np.arange(1,20)):
 
     frame_error_rate = []
     max_iterations = max_iterations
@@ -269,8 +269,8 @@ if __name__ == "__main__":
     with Profile() as prof:
         n_motifs, n_picks = 8, 4
         dv, dc, ffdim, P = 3, 9, 67, 2 * 0.038860387943791645
-        k, n = 180, 270
-        L, M = 12, 36
+        k, n = 22, 33
+        L, M = 12, 51
         read_length = 6
         read_lengths = np.arange(7, 13)
 

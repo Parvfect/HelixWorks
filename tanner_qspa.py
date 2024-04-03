@@ -15,7 +15,7 @@ class TannerQSPA(VariableTannerGraph):
         for vn in self.vns:
             vn_index = vn.identifier
             for cn_index in vn.links:
-                self.vn_links[(cn_index, vn_index)] = P[vn_index]
+                self.vn_links[(cn_index, vn_index)] = P[vn_index].copy()
 
     def initialize_cn_links(self):
         """ Initializes CN Links"""
@@ -24,7 +24,7 @@ class TannerQSPA(VariableTannerGraph):
             for vn_index in cn.links:
                 self.cn_links[(cn_index, vn_index)] = np.zeros(67)
         
-    def qspa_decode(self, symbol_likelihood_arr, H, GF, max_iterations=5):
+    def qspa_decode(self, symbol_likelihood_arr, H, GF, max_iterations=20):
         """Decodes using QSPA """
 
         self.GF = GF
@@ -64,7 +64,7 @@ class TannerQSPA(VariableTannerGraph):
             prev_max_prob_codeword = max_prob_codeword
 
             iterations+=1
-            print(f"Iteration {iterations}")
+            #print(f"Iteration {iterations}")
 
         print("Decoding does not converge")
         return max_prob_codeword
