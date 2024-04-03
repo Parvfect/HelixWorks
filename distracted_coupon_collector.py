@@ -5,6 +5,7 @@ import galois
 import row_echleon as r
 import numpy as np
 from itertools import combinations
+import sys
 from tqdm import tqdm
 from protograph_interface import get_Harr_sc_ldpc, get_dv_dc
 from tanner import VariableTannerGraph
@@ -196,7 +197,7 @@ def simulate_reads(C, symbols, read_length, P, n_motifs, n_picks):
 
     return likelihood_arr
 
-def decoding_errors_fer(k, n, dv, dc, P, H, G, GF, graph, C, symbols, n_motifs, n_picks, decoder=None, decoding_failures_parameter=20, max_iterations=50, iterations=50, uncoded=False, bec_decoder=False, label=None, code_class="", read_lengths=np.arange(1,20)):
+def decoding_errors_fer(k, n, dv, dc, P, H, G, GF, graph, C, symbols, n_motifs, n_picks, decoder=None, decoding_failures_parameter=200, max_iterations=20000, iterations=50, uncoded=False, bec_decoder=False, label=None, code_class="", read_lengths=np.arange(1,20)):
 
     frame_error_rate = []
     max_iterations = max_iterations
@@ -207,13 +208,16 @@ def decoding_errors_fer(k, n, dv, dc, P, H, G, GF, graph, C, symbols, n_motifs, 
         for j in tqdm(range(max_iterations)):
             symbol_likelihoods_arr = np.array(simulate_reads(C, symbols, i, P, n_motifs, n_picks))
 
+            #symbol_likelihoods_arr = [[1/67]*67]*n
+            #print(symbol_likelihoods_arr)
+
             if not decoder:
                 z = graph.qspa_decode(symbol_likelihoods_arr, H, GF)
             else:
                 z = decoder.decode(symbol_likelihoods_arr, max_iter=20)
             
             #print(C)
-            #print(z)
+            print(z)
 
             if np.array_equal(C, z):
                 counter += 1
@@ -262,7 +266,7 @@ def run_fer(n_motifs, n_picks, dv, dc, k, n, L, M, ffdim, P, code_class="", iter
 
     plt.legend()
     plt.grid()
-    plt.show()
+    #plt.show()
 
 
 if __name__ == "__main__":
@@ -272,11 +276,13 @@ if __name__ == "__main__":
         k, n = 22, 33
         L, M = 12, 51
         read_length = 6
-        read_lengths = np.arange(7, 13)
+        read_lengths = np.arange(9, 10)
 
 
-        run_fer(n_motifs, n_picks, dv, dc, k, n, L, M, ffdim, P, code_class="",  uncoded=False, zero_codeword=False, bec_decoder=False, graph_decoding=False, read_lengths=read_lengths)
+        #run_fer(n_motifs, n_picks, dv, dc, k, n, L, M, ffdim, P, code_class="",  uncoded=False, zero_codeword=False, bec_decoder=False, graph_decoding=False, read_lengths=read_lengths)
         run_fer(n_motifs, n_picks, dv, dc, k, n, L, M, ffdim, P, code_class="",  uncoded=False, zero_codeword=False, bec_decoder=False, graph_decoding=True, read_lengths=read_lengths)
+        run_fer(n_motifs, n_picks, dv, dc, k, n, L, M, ffdim, P, code_class="",  uncoded=False, zero_codeword=True, bec_decoder=False, graph_decoding=True, read_lengths=read_lengths)
+        plt.show()
     (
         Stats(prof)
         .strip_dirs()

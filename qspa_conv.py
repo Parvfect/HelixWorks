@@ -1,6 +1,6 @@
 from collections import defaultdict
 from more_itertools import distinct_permutations
-
+import random
 import galois
 import numpy as np
 from scipy.stats import multinomial
@@ -8,6 +8,10 @@ from math import factorial
 import utils
 import math
 
+def get_max_symbol(prob_arr):
+    max_val = np.max(prob_arr)
+    max_indices = [i for i, val in enumerate(prob_arr) if val == max_val]
+    return random.choice(max_indices)
 
 def multinomial_def(n, x, p):
     return (factorial(n)/(np.prod([factorial(i) for i in x])))*(np.prod([p[j]**x[j] for j in range(len(x))]))
@@ -330,7 +334,7 @@ class QSPADecoder:
             for a in range(self.GF.order):
                 for i in idxs:
                     probs[a] *= S[i, j, a]
-            z[j] = np.argmax(probs)
+            z[j] = get_max_symbol(probs)
         z = self.GF(z.astype(int))
         return z
 
