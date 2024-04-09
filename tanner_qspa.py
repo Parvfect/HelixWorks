@@ -5,6 +5,8 @@ import random
 
 def get_max_symbol(prob_arr):
     max_val = np.max(prob_arr)
+
+    # Numerical issues ? Strict Equality?
     max_indices = [i for i, val in enumerate(prob_arr) if val == max_val]
     #print(prob_arr)
     #print(max_indices)
@@ -32,7 +34,7 @@ class TannerQSPA(VariableTannerGraph):
             for vn_index in cn.links:
                 self.cn_links[(cn_index, vn_index)] = np.zeros(67)
         
-    def qspa_decode(self, symbol_likelihood_arr, H, GF, max_iterations=20):
+    def qspa_decode(self, symbol_likelihood_arr, H, GF, max_iterations=10):
         """Decodes using QSPA """
 
         self.GF = GF
@@ -67,25 +69,26 @@ class TannerQSPA(VariableTannerGraph):
             #print(sum(random.choice(list(self.cn_links.items()))[1]))
 
             parity = not np.matmul(H, max_prob_codeword).any()
+            
+            
             if parity:
-                print("Decoding converges")
+                #print("Decoding converges")
                 return max_prob_codeword
+                
 
             self.vn_update(symbol_likelihood_arr)
             #print(sum(random.choice(list(self.vn_links.items()))[1]))
 
-
-            if iterations > max_iterations:
+            
+            if np.array_equal(max_prob_codeword, prev_max_prob_codeword) or iterations > max_iterations:
                 break
-            #if np.array_equal(max_prob_codeword, prev_max_prob_codeword) or iterations > max_iterations:
-            #    break
             
             prev_max_prob_codeword = max_prob_codeword
 
             iterations+=1
             #print(f"Iteration {iterations}")
 
-        print("Decoding does not converge")
+        #print("Decoding does not converge")
         return max_prob_codeword
     
     def get_max_prob_codeword(self, P, GF):
